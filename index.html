@@ -1,104 +1,273 @@
-<!-- ... existing code ... -->
-        <!-- Presets -->
-        <div class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700/60 text-xs">
-          <span class="text-slate-400 px-2 font-medium">Presets:</span>
-          <button id="btnPresetFig314" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition shadow-sm">Figure 3.14 (Book)</button>
-          <button id="btnPresetSimple" class="px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Binary Tree</button>
-          <button id="btnPresetDeadEnd" class="px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Multi Dead-End</button>
-        </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Backtracking Search Studio (Luger Figure 3.14)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono-code {
+      font-family: 'Fira Code', monospace;
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 0.2; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .node-pulse {
+      animation: pulseRing 1.8s ease-in-out infinite;
+      transform-origin: center;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col select-none overflow-x-hidden">
 
-        <!-- Import / Upload Modal Trigger -->
-        <button id="btnOpenImport" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 text-xs font-medium transition shadow-sm">
-          <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i> Import / Upload Tree
-        </button>
-        <button id="btnAutoLayout" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 text-xs font-medium transition" title="Auto-arrange tree hierarchically">
-          <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-emerald-400"></i> Auto-Layout
-        </button>
-
-        <!-- Mode Selector -->
-        <div class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700/60 text-xs ml-auto">
-          <button id="tabExplore" class="px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition">
-            <i data-lucide="compass" class="w-3.5 h-3.5 text-indigo-400"></i> Simulator
-          </button>
-          <button id="tabPractice" class="px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
-            <i data-lucide="brain-circuit" class="w-3.5 h-3.5 text-emerald-400"></i> Practice Quiz
-          </button>
-        </div>
+  <!-- TOP HEADER -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-md z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-600/30">
+        <i data-lucide="git-branch" class="w-5 h-5"></i>
       </div>
-    </header>
-
-    <!-- State Cards Bar -->
-    <div class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-      <div class="flex items-center gap-4 flex-wrap">
-        <div class="flex items-center gap-2">
-          <span class="text-slate-400 font-semibold">Iteration:</span>
-          <span id="stepCounter" class="font-mono bg-slate-800 px-2 py-0.5 rounded text-white font-bold">0 / 0</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60 font-semibold">CS:</span>
-          <span id="cardCS" class="font-mono font-bold text-indigo-400">A</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800/60 font-semibold">SL:</span>
-          <span id="cardSL" class="font-mono font-bold text-sky-400">[A]</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="px-2 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-800/60 font-semibold">NSL:</span>
-          <span id="cardNSL" class="font-mono font-bold text-violet-400">[A]</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60 font-semibold">DE:</span>
-          <span id="cardDE" class="font-mono font-bold text-rose-400">[ ]</span>
-        </div>
-      </div>
-      <div id="actionExplanation" class="text-slate-400 text-xs italic max-w-md truncate">
-        Initialize: SL = [A]; NSL = [A]; DE = [ ]; CS = A;
+      <div>
+        <h1 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+          Backtracking Search Studio
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-indigo-900/60 text-indigo-300 border border-indigo-700/60">Figure 3.14</span>
+        </h1>
+        <p class="text-xs text-slate-400">George Luger Artificial Intelligence Algorithm Visualizer & Quiz Arena</p>
       </div>
     </div>
 
-    <!-- Main Content Grid -->
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-        <div class="border-b border-slate-800 bg-slate-950/50">
-          <button id="toggleAlgo" class="w-full px-4 py-2 flex items-center justify-between text-xs text-slate-300 font-semibold hover:bg-slate-800/40">
-            <span class="flex items-center gap-1.5"><i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i> George Luger Backtracking Algorithm (Figure 3.14)</span>
+    <!-- Presets & Actions -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <div class="flex items-center bg-slate-800/90 p-1 rounded-lg border border-slate-700 text-xs">
+        <span class="text-slate-400 px-2 font-medium">Presets:</span>
+        <button id="btnPresetBook" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition shadow-sm">Figure 3.14 (Book)</button>
+        <button id="btnPresetBinary" class="px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Binary Tree</button>
+        <button id="btnPresetDeadEnd" class="px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Dead-End Maze</button>
+      </div>
+
+      <button id="btnOpenImportModal" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 text-xs font-medium transition shadow-sm">
+        <i data-lucide="upload" class="w-3.5 h-3.5 text-indigo-400"></i> Import / Upload Tree
+      </button>
+
+      <button id="btnAutoLayout" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 text-xs font-medium transition shadow-sm" title="Re-arrange tree vertically">
+        <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-emerald-400"></i> Auto-Layout
+      </button>
+
+      <!-- View Tabs -->
+      <div class="flex items-center bg-slate-800/90 p-1 rounded-lg border border-slate-700 text-xs">
+        <button id="btnTabSim" class="px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition">
+          <i data-lucide="play-circle" class="w-3.5 h-3.5 text-indigo-400"></i> Simulator
+        </button>
+        <button id="btnTabQuiz" class="px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="brain" class="w-3.5 h-3.5 text-emerald-400"></i> Practice Quiz
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- LIVE STATE MONITOR CARDS -->
+  <div class="bg-slate-900/80 border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+    <div class="flex items-center gap-4 flex-wrap font-mono-code">
+      <div class="flex items-center gap-1.5">
+        <span class="text-slate-400 font-sans font-semibold">Iteration:</span>
+        <span id="cardIter" class="bg-slate-800 px-2 py-0.5 rounded text-white font-bold border border-slate-700">0 / 0</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60 font-sans font-semibold">CS:</span>
+        <span id="cardCS" class="font-bold text-indigo-400 text-sm">A</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800/60 font-sans font-semibold">SL:</span>
+        <span id="cardSL" class="font-bold text-sky-400 text-sm">[A]</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="px-2 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-800/60 font-sans font-semibold">NSL:</span>
+        <span id="cardNSL" class="font-bold text-violet-400 text-sm">[A]</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60 font-sans font-semibold">DE:</span>
+        <span id="cardDE" class="font-bold text-rose-400 text-sm">[ ]</span>
+      </div>
+    </div>
+    <div id="cardExplanation" class="text-slate-400 text-xs italic max-w-lg truncate">
+      Initialize: SL = [A]; NSL = [A]; DE = [ ]; CS = A;
+    </div>
+  </div>
+
+  <!-- MAIN INTERFACE BODY -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden relative">
+
+    <!-- LEFT 7 COLS: CANVAS + DRAWING CONTROLS -->
+    <div class="lg:col-span-7 flex flex-col border-r border-slate-800 bg-slate-950/70 relative">
+      
+      <!-- Canvas Action Toolbar -->
+      <div class="bg-slate-900/90 border-b border-slate-800 px-3 py-2 flex items-center justify-between gap-2 text-xs flex-wrap z-10">
+        <!-- Tools -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-slate-400 font-semibold mr-1">Tools:</span>
+          <button id="toolSelect" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-indigo-600 text-white border border-indigo-500/50 shadow-sm transition">
+            <i data-lucide="mouse-pointer" class="w-3.5 h-3.5"></i> Move/Select
+          </button>
+          <button id="toolAddNode" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-emerald-400"></i> + Node
+          </button>
+          <button id="toolAddEdge" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition">
+            <i data-lucide="arrow-down-right" class="w-3.5 h-3.5 text-purple-400"></i> + Edge
+          </button>
+          <button id="toolDelete" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i> Delete
+          </button>
+        </div>
+
+        <!-- Node Selector Start & Goal -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5">
+            <label class="text-emerald-400 font-bold text-[11px]">START:</label>
+            <select id="selectStartNode" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"></select>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <label class="text-amber-400 font-bold text-[11px]">GOAL:</label>
+            <select id="selectGoalNode" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white font-mono text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none"></select>
+          </div>
+          <button id="btnRecompute" class="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="Re-run Search Trace">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action status / instructions strip -->
+      <div id="canvasNotification" class="px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
+        <span id="canvasStatusTip">Drag nodes to reposition. Left-to-right order dictates branch expansion.</span>
+        <button id="btnCancelConnecting" class="hidden text-rose-400 hover:text-rose-300 font-semibold">Cancel Connecting (Esc)</button>
+      </div>
+
+      <!-- SVG Drawing Canvas -->
+      <div class="flex-1 relative overflow-hidden bg-slate-950 flex items-center justify-center">
+        <svg id="treeSvg" class="w-full h-full cursor-default select-none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Regular Edge Arrow -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+            </marker>
+            <!-- Active SL Path Arrow -->
+            <marker id="arrow-active" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
+            </marker>
+            <!-- Backtracking Arc Arrow -->
+            <marker id="arrow-backtrack" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
+            </marker>
+            <!-- Rubberband Guide Arrow -->
+            <marker id="arrow-guide" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#a855f7" />
+            </marker>
+          </defs>
+
+          <!-- Layer 1: Edges -->
+          <g id="layerEdges"></g>
+          <!-- Layer 2: Backtracking return arcs -->
+          <g id="layerBacktrack"></g>
+          <!-- Layer 3: Dynamic rubberband line for Edge creation -->
+          <line id="rubberbandLine" x1="0" y1="0" x2="0" y2="0" stroke="#a855f7" stroke-width="2.5" stroke-dasharray="5 4" marker-end="url(#arrow-guide)" class="hidden pointer-events-none" />
+          <!-- Layer 4: Nodes -->
+          <g id="layerNodes"></g>
+        </svg>
+      </div>
+
+      <!-- Bottom Playback Transport Controls -->
+      <div class="bg-slate-900 border-t border-slate-800 p-2.5 flex items-center justify-between gap-3 text-xs z-10">
+        <div class="flex items-center gap-1.5">
+          <button id="btnFirst" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="First Iteration (0)">
+            <i data-lucide="chevrons-left" class="w-4 h-4"></i>
+          </button>
+          <button id="btnPrev" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="Previous Iteration">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+          </button>
+          <button id="btnPlay" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition flex items-center gap-2 shadow-md shadow-indigo-600/30">
+            <i data-lucide="play" id="playIcon" class="w-4 h-4"></i>
+            <span id="playText">Play</span>
+          </button>
+          <button id="btnNext" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="Next Iteration">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </button>
+          <button id="btnLast" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="Last Iteration">
+            <i data-lucide="chevrons-right" class="w-4 h-4"></i>
+          </button>
+          <button id="btnReset" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition" title="Reset to Start">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Speed Slider -->
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 text-[11px] font-medium">Speed:</span>
+          <input type="range" id="sliderSpeed" min="200" max="2500" value="1000" step="100" class="w-24 accent-indigo-500 cursor-pointer">
+          <span id="labelSpeed" class="text-slate-400 text-[11px] font-mono">1.0s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT 5 COLS: DUAL VIEW (SIMULATOR TRACE TABLE OR PRACTICE QUIZ) -->
+    <div class="lg:col-span-5 flex flex-col bg-slate-900/60 overflow-hidden">
+      
+      <!-- VIEW 1: SIMULATOR & TEXTBOOK TRACE TABLE -->
+      <div id="viewSimulator" class="flex-1 flex flex-col overflow-hidden">
+        
+        <!-- Algorithm Pseudocode Banner -->
+        <div class="border-b border-slate-800 bg-slate-950/70">
+          <button id="btnToggleAlgo" class="w-full px-4 py-2 flex items-center justify-between text-xs text-slate-300 font-semibold hover:bg-slate-800/40">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="book-open" class="w-3.5 h-3.5 text-indigo-400"></i> George Luger Backtracking Rules (Figure 3.14)
+            </span>
             <i data-lucide="chevron-down" id="algoChevron" class="w-3.5 h-3.5 transition-transform duration-200"></i>
           </button>
-          <div id="algoContent" class="px-4 py-2 text-[11px] font-mono-code bg-slate-950 text-slate-300 space-y-1 border-t border-slate-800/60 max-h-48 overflow-y-auto">
-            <div id="codeLine1" class="px-1 py-0.5 rounded transition">1. Initialize: SL = [Start]; NSL = [Start]; DE = [ ]; CS = Start;</div>
-            <div id="codeLine2" class="px-1 py-0.5 rounded transition">2. WHILE NSL ≠ [ ] DO:</div>
-            <div id="codeLine3" class="px-1 py-0.5 rounded transition pl-4">IF CS = Goal THEN RETURN SL (Success);</div>
-            <div id="codeLine4" class="px-1 py-0.5 rounded transition pl-4">Generate ordered children of CS not in DE, SL, or NSL;</div>
-            <div id="codeLine5" class="px-1 py-0.5 rounded transition pl-4">IF CS has no unvisited children (Dead End) THEN:</div>
-            <div id="codeLine6" class="px-1 py-0.5 rounded transition pl-8">WHILE SL ≠ [ ] and CS = car(SL) DO:</div>
-            <div id="codeLine7" class="px-1 py-0.5 rounded transition pl-12">DE = [CS | DE]; SL = cdr(SL); NSL = cdr(NSL);</div>
-            <div id="codeLine8" class="px-1 py-0.5 rounded transition pl-12">CS = car(NSL);</div>
-            <div id="codeLine9" class="px-1 py-0.5 rounded transition pl-8">SL = [CS | SL];</div>
-            <div id="codeLine10" class="px-1 py-0.5 rounded transition pl-4">ELSE:</div>
-            <div id="codeLine11" class="px-1 py-0.5 rounded transition pl-8">NSL = append(children, NSL);</div>
-            <div id="codeLine12" class="px-1 py-0.5 rounded transition pl-8">CS = car(NSL); SL = [CS | SL];</div>
-            <div id="codeLine13" class="px-1 py-0.5 rounded transition">3. RETURN failure (No path to goal);</div>
+
+          <div id="algoContent" class="px-4 py-2 text-[11px] font-mono-code bg-slate-950 text-slate-300 space-y-0.5 border-t border-slate-800/60 max-h-40 overflow-y-auto">
+            <div id="ruleLine1" class="px-1.5 py-0.5 rounded transition">1. Initialize: SL = [Start]; NSL = [Start]; DE = [ ]; CS = Start;</div>
+            <div id="ruleLine2" class="px-1.5 py-0.5 rounded transition">2. WHILE NSL ≠ [ ] DO:</div>
+            <div id="ruleLine3" class="px-1.5 py-0.5 rounded transition pl-4">IF CS = Goal THEN RETURN SL (Success);</div>
+            <div id="ruleLine4" class="px-1.5 py-0.5 rounded transition pl-4">Generate ordered children of CS not in DE, SL, or NSL;</div>
+            <div id="ruleLine5" class="px-1.5 py-0.5 rounded transition pl-4">IF CS has no unvisited children (Dead-End) THEN:</div>
+            <div id="ruleLine6" class="px-1.5 py-0.5 rounded transition pl-8">WHILE SL ≠ [ ] and CS = car(SL) DO:</div>
+            <div id="ruleLine7" class="px-1.5 py-0.5 rounded transition pl-12">DE = [CS | DE]; SL = cdr(SL); NSL = cdr(NSL);</div>
+            <div id="ruleLine8" class="px-1.5 py-0.5 rounded transition pl-12">CS = car(NSL);</div>
+            <div id="ruleLine9" class="px-1.5 py-0.5 rounded transition pl-8">SL = [CS | SL];</div>
+            <div id="ruleLine10" class="px-1.5 py-0.5 rounded transition pl-4">ELSE:</div>
+            <div id="ruleLine11" class="px-1.5 py-0.5 rounded transition pl-8">NSL = append(children, NSL);</div>
+            <div id="ruleLine12" class="px-1.5 py-0.5 rounded transition pl-8">CS = car(NSL); SL = [CS | SL];</div>
+            <div id="ruleLine13" class="px-1.5 py-0.5 rounded transition">3. RETURN failure (No path to goal);</div>
           </div>
         </div>
 
-        <!-- Textbook Trace Table (Exact Figure 3.14 format) -->
+        <!-- Trace Table (Exact Replica of Figure 3.14 Table) -->
         <div class="flex-1 overflow-auto p-3">
-          <div class="text-xs font-semibold text-slate-300 mb-2 flex items-center justify-between">
-            <span class="flex items-center gap-1.5"><i data-lucide="table" class="w-3.5 h-3.5 text-indigo-400"></i> Trace of Backtrack on State Space</span>
-            <span class="text-[11px] text-slate-500 font-normal">Matches Figure 3.14 table</span>
+          <div class="flex items-center justify-between text-xs font-semibold text-slate-300 mb-2">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="table" class="w-3.5 h-3.5 text-indigo-400"></i> Trace of Backtrack on State Space
+            </span>
+            <span class="text-[10px] text-slate-500 font-normal">Click any row to jump to iteration</span>
           </div>
 
-          <div class="border border-slate-800 rounded-lg overflow-hidden shadow-inner bg-slate-950/60">
+          <div class="border border-slate-800 rounded-lg overflow-hidden bg-slate-950/80 shadow-inner">
             <table class="w-full text-left text-xs font-mono-code border-collapse">
               <thead class="bg-slate-800/90 text-slate-300 uppercase tracking-wider text-[10px] sticky top-0 border-b border-slate-700">
                 <tr>
                   <th class="py-2.5 px-3 text-center w-28">AFTER ITERATION</th>
-                  <th class="py-2.5 px-3 text-center w-14 text-indigo-300">CS</th>
+                  <th class="py-2.5 px-3 text-center w-12 text-indigo-300">CS</th>
                   <th class="py-2.5 px-4 text-sky-300">SL</th>
                   <th class="py-2.5 px-4 text-violet-300">NSL</th>
                   <th class="py-2.5 px-4 text-rose-300">DE</th>
                 </tr>
               </thead>
-              <tbody id="traceTableBody" class="divide-y divide-slate-800/60 text-slate-300 text-xs">
+              <tbody id="traceTableBody" class="divide-y divide-slate-800/60 text-slate-300">
                 <!-- Dynamically populated rows -->
               </tbody>
             </table>
@@ -106,15 +275,15 @@
         </div>
       </div>
 
-      <!-- PRACTICE VIEW: Interactive Prediction Quiz -->
-      <div id="viewPractice" class="hidden flex-1 flex flex-col p-4 overflow-y-auto bg-slate-900/40">
-        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 shadow-lg space-y-4 max-w-xl mx-auto w-full">
+      <!-- VIEW 2: PRACTICE QUIZ (PREDICTION CHALLENGE) -->
+      <div id="viewQuiz" class="hidden flex-1 flex flex-col p-4 overflow-y-auto">
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 shadow-xl space-y-4 max-w-lg mx-auto w-full">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3">
             <div>
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <i data-lucide="brain-circuit" class="w-4 h-4 text-emerald-400"></i> Step-by-Step Backtrack Predictor
-              </h3>
-              <p class="text-[11px] text-slate-400 mt-0.5">Test your understanding of Luger's backtracking algorithm</p>
+              <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="brain" class="w-4 h-4 text-emerald-400"></i> Luger Step Predictor
+              </h2>
+              <p class="text-[11px] text-slate-400 mt-0.5">Predict the state space values for the next step</p>
             </div>
             <div class="text-right text-xs">
               <span class="text-slate-400">Score: </span>
@@ -123,7 +292,7 @@
           </div>
 
           <div class="p-3 bg-indigo-950/40 border border-indigo-900/50 rounded-lg text-xs text-indigo-200">
-            Given current state at iteration <strong id="quizCurrentIter" class="text-white">0</strong>, predict the values for the <span class="text-amber-400 font-bold">NEXT iteration</span>:
+            Current iteration: <strong id="quizIterLabel" class="text-white font-mono">0</strong>. Enter the predicted values for <span class="text-amber-400 font-bold">NEXT ITERATION</span>:
           </div>
 
           <form id="quizForm" class="space-y-3 text-xs">
@@ -133,17 +302,17 @@
             </div>
 
             <div>
-              <label class="block text-slate-300 font-semibold mb-1">SL (State List):</label>
+              <label class="block text-slate-300 font-semibold mb-1">SL (State List - from current node back to root):</label>
               <input type="text" id="inputSL" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g. [B A]">
             </div>
 
             <div>
-              <label class="block text-slate-300 font-semibold mb-1">NSL (New State List):</label>
+              <label class="block text-slate-300 font-semibold mb-1">NSL (New State List - candidates stack):</label>
               <input type="text" id="inputNSL" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:ring-2 focus:ring-violet-500 focus:outline-none" placeholder="e.g. [B C D A]">
             </div>
 
             <div>
-              <label class="block text-slate-300 font-semibold mb-1">DE (Dead Ends):</label>
+              <label class="block text-slate-300 font-semibold mb-1">DE (Dead Ends List):</label>
               <input type="text" id="inputDE" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:ring-2 focus:ring-rose-500 focus:outline-none" placeholder="e.g. [ ] or [H]">
             </div>
 
@@ -152,7 +321,7 @@
                 Submit Prediction
               </button>
               <button type="button" id="btnRevealStep" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium rounded-lg border border-slate-700 transition">
-                Show Answer
+                Reveal Answer
               </button>
             </div>
           </form>
@@ -160,16 +329,75 @@
           <div id="quizFeedback" class="hidden text-xs rounded-lg p-3"></div>
         </div>
       </div>
+    </div>
+  </main>
 
-      <div class="p-3 bg-slate-950/80 border-t border-slate-800 flex items-center justify-end gap-2 text-xs">
-        <button id="btnCancelImport" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Cancel</button>
-        <button id="btnApplyImport" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition shadow-md shadow-indigo-600/30">Build & Run Tree</button>
+  <!-- UPLOAD / IMPORT MODAL -->
+  <div id="importModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="upload-cloud" class="w-4 h-4 text-indigo-400"></i> Import or Upload Custom Tree
+        </h3>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="p-4 space-y-4 text-xs">
+        <!-- Subtabs -->
+        <div class="flex border-b border-slate-800 gap-4 text-xs">
+          <button id="tabImportTxt" class="text-indigo-400 border-b-2 border-indigo-500 pb-1 font-semibold">Adjacency Text</button>
+          <button id="tabImportJson" class="text-slate-400 hover:text-slate-200 pb-1">JSON Format</button>
+          <button id="tabImportFile" class="text-slate-400 hover:text-slate-200 pb-1">File Upload</button>
+        </div>
+
+        <!-- Section: Adjacency -->
+        <div id="secImportTxt" class="space-y-2">
+          <div class="flex items-center justify-between text-slate-400">
+            <span>Specify edges line by line (e.g. <code>Parent -> Child1, Child2</code>):</span>
+            <button id="btnLoadExampleText" class="text-indigo-400 hover:underline">Load Figure 3.14</button>
+          </div>
+          <textarea id="txtAdjacency" rows="6" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="A -> B, C, D&#10;B -> E, F&#10;C -> F, G&#10;E -> H, I&#10;F -> J"></textarea>
+        </div>
+
+        <!-- Section: JSON -->
+        <div id="secImportJson" class="hidden space-y-2">
+          <span class="text-slate-400">Paste tree JSON structure:</span>
+          <textarea id="txtJsonData" rows="6" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white font-mono text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder='{"edges":[{"from":"A","to":"B"},{"from":"A","to":"C"}]}'></textarea>
+        </div>
+
+        <!-- Section: File Upload -->
+        <div id="secImportFile" class="hidden space-y-2">
+          <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-6 text-center cursor-pointer transition">
+            <i data-lucide="file-up" class="w-8 h-8 text-indigo-400 mx-auto mb-2"></i>
+            <p class="text-slate-300 font-medium">Click to select or drag & drop file</p>
+            <p class="text-[11px] text-slate-500 mt-1">Accepts .txt adjacency lists or .json graph definitions</p>
+            <input type="file" id="fileInput" accept=".txt,.json" class="hidden">
+          </div>
+        </div>
+
+        <!-- Start & Goal configuration -->
+        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">Start Node:</label>
+            <input type="text" id="modalStartNode" value="A" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono uppercase focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-medium mb-1">Goal Node:</label>
+            <input type="text" id="modalGoalNode" value="G" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono uppercase focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-end gap-2 text-xs">
+        <button id="btnCancelModal" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">Cancel</button>
+        <button id="btnApplyImport" class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition shadow-md shadow-indigo-600/30">Build Tree & Auto-Layout</button>
       </div>
     </div>
   </div>
 
+  <!-- JAVASCRIPT ENGINE -->
   <script>
-    // --- Data Model & State ---
+    // --- Data Store ---
     let graph = {
       nodes: {}, // id: { id, label, x, y }
       edges: []  // { from, to }
@@ -178,102 +406,108 @@
     let startNodeId = 'A';
     let goalNodeId = 'G';
 
-    // Backtracking trace steps
+    // Simulation Trace State
     let traceSteps = [];
     let currentStepIdx = 0;
     let isPlaying = false;
     let playTimer = null;
 
-    // Canvas Interaction States
+    // Interactive Canvas Tools State
     let currentTool = 'select'; // 'select', 'addNode', 'addEdge', 'delete'
-    let selectedNodeForEdge = null;
+    let selectedSourceNode = null;
     let draggingNodeId = null;
     let dragOffset = { x: 0, y: 0 };
 
-    // Quiz State
+    // Quiz Score
     let quizScore = 0;
-    let quizAttempts = 0;
+    let quizTotal = 0;
 
-    // --- Exact Figure 3.14 Preset ---
-    const PRESETS = {
-      figure314: {
-        nodes: {
-          'A': { id: 'A', label: 'A', x: 300, y: 55 },
-          'B': { id: 'B', label: 'B', x: 190, y: 155 },
-          'C': { id: 'C', label: 'C', x: 340, y: 155 },
-          'D': { id: 'D', label: 'D', x: 470, y: 155 },
-          'E': { id: 'E', label: 'E', x: 130, y: 260 },
-          'F': { id: 'F', label: 'F', x: 270, y: 260 },
-          'G': { id: 'G', label: 'G', x: 390, y: 260 },
-          'H': { id: 'H', label: 'H', x: 90,  y: 365 },
-          'I': { id: 'I', label: 'I', x: 180, y: 365 },
-          'J': { id: 'J', label: 'J', x: 270, y: 365 }
-        },
-        edges: [
-          { from: 'A', to: 'B' },
-          { from: 'A', to: 'C' },
-          { from: 'A', to: 'D' },
-          { from: 'B', to: 'E' },
-          { from: 'B', to: 'F' },
-          { from: 'C', to: 'F' },
-          { from: 'C', to: 'G' },
-          { from: 'E', to: 'H' },
-          { from: 'E', to: 'I' },
-          { from: 'F', to: 'J' }
-        ],
-        start: 'A',
-        goal: 'G'
+    // --- Figure 3.14 Textbook Dataset Preset ---
+    const PRESET_FIG_314 = {
+      nodes: {
+        'A': { id: 'A', label: 'A', x: 280, y: 50 },
+        'B': { id: 'B', label: 'B', x: 180, y: 150 },
+        'C': { id: 'C', label: 'C', x: 320, y: 150 },
+        'D': { id: 'D', label: 'D', x: 440, y: 150 },
+        'E': { id: 'E', label: 'E', x: 120, y: 250 },
+        'F': { id: 'F', label: 'F', x: 250, y: 250 },
+        'G': { id: 'G', label: 'G', x: 370, y: 250 },
+        'H': { id: 'H', label: 'H', x: 80,  y: 350 },
+        'I': { id: 'I', label: 'I', x: 170, y: 350 },
+        'J': { id: 'J', label: 'J', x: 250, y: 350 }
       },
-      simpleBinary: {
-        nodes: {
-          'A': { id: 'A', label: 'A', x: 300, y: 60 },
-          'B': { id: 'B', label: 'B', x: 180, y: 170 },
-          'C': { id: 'C', label: 'C', x: 420, y: 170 },
-          'D': { id: 'D', label: 'D', x: 120, y: 280 },
-          'E': { id: 'E', label: 'E', x: 240, y: 280 },
-          'F': { id: 'F', label: 'F', x: 360, y: 280 },
-          'G': { id: 'G', label: 'G', x: 480, y: 280 }
-        },
-        edges: [
-          { from: 'A', to: 'B' },
-          { from: 'A', to: 'C' },
-          { from: 'B', to: 'D' },
-          { from: 'B', to: 'E' },
-          { from: 'C', to: 'F' },
-          { from: 'C', to: 'G' }
-        ],
-        start: 'A',
-        goal: 'E'
-      },
-      deadEndMaze: {
-        nodes: {
-          'Start': { id: 'Start', label: 'S', x: 300, y: 50 },
-          'A': { id: 'A', label: 'A', x: 170, y: 150 },
-          'B': { id: 'B', label: 'B', x: 430, y: 150 },
-          'Dead1': { id: 'Dead1', label: 'D1', x: 100, y: 260 },
-          'Dead2': { id: 'Dead2', label: 'D2', x: 230, y: 260 },
-          'Dead3': { id: 'Dead3', label: 'D3', x: 360, y: 260 },
-          'Goal': { id: 'Goal', label: 'G', x: 490, y: 260 }
-        },
-        edges: [
-          { from: 'Start', to: 'A' },
-          { from: 'Start', to: 'B' },
-          { from: 'A', to: 'Dead1' },
-          { from: 'A', to: 'Dead2' },
-          { from: 'B', to: 'Dead3' },
-          { from: 'B', to: 'Goal' }
-        ],
-        start: 'Start',
-        goal: 'Goal'
-      }
+      edges: [
+        { from: 'A', to: 'B' },
+        { from: 'A', to: 'C' },
+        { from: 'A', to: 'D' },
+        { from: 'B', to: 'E' },
+        { from: 'B', to: 'F' },
+        { from: 'C', to: 'F' },
+        { from: 'C', to: 'G' },
+        { from: 'E', to: 'H' },
+        { from: 'E', to: 'I' },
+        { from: 'F', to: 'J' }
+      ],
+      start: 'A',
+      goal: 'G'
     };
 
-    // --- Textbook Backtracking Algorithm (Luger Figure 3.14) ---
-    function generateBacktrackingTrace(graphData, startId, goalId) {
-      const steps = [];
-      if (!graphData.nodes[startId]) return steps;
+    const PRESET_BINARY = {
+      nodes: {
+        'A': { id: 'A', label: 'A', x: 280, y: 55 },
+        'B': { id: 'B', label: 'B', x: 160, y: 160 },
+        'C': { id: 'C', label: 'C', x: 400, y: 160 },
+        'D': { id: 'D', label: 'D', x: 100, y: 270 },
+        'E': { id: 'E', label: 'E', x: 220, y: 270 },
+        'F': { id: 'F', label: 'F', x: 340, y: 270 },
+        'G': { id: 'G', label: 'G', x: 460, y: 270 }
+      },
+      edges: [
+        { from: 'A', to: 'B' },
+        { from: 'A', to: 'C' },
+        { from: 'B', to: 'D' },
+        { from: 'B', to: 'E' },
+        { from: 'C', to: 'F' },
+        { from: 'C', to: 'G' }
+      ],
+      start: 'A',
+      goal: 'E'
+    };
 
-      // Children ordered strictly by visual X-coordinate (left to right)
+    const PRESET_DEADEND = {
+      nodes: {
+        'A': { id: 'A', label: 'A', x: 280, y: 50 },
+        'B': { id: 'B', label: 'B', x: 160, y: 150 },
+        'C': { id: 'C', label: 'C', x: 400, y: 150 },
+        'D': { id: 'D', label: 'D', x: 100, y: 260 },
+        'E': { id: 'E', label: 'E', x: 220, y: 260 },
+        'F': { id: 'F', label: 'F', x: 340, y: 260 },
+        'G': { id: 'G', label: 'G', x: 460, y: 260 }
+      },
+      edges: [
+        { from: 'A', to: 'B' },
+        { from: 'A', to: 'C' },
+        { from: 'B', to: 'D' },
+        { from: 'B', to: 'E' },
+        { from: 'C', to: 'F' },
+        { from: 'C', to: 'G' }
+      ],
+      start: 'A',
+      goal: 'G'
+    };
+
+    // --- Helper for Safe DOM Text ---
+    function safeText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    }
+
+    // --- George Luger Backtracking Algorithm (Exact Reproduction of Fig 3.14) ---
+    function generateBacktrackingTrace(graphData, start, goal) {
+      const steps = [];
+      if (!graphData.nodes[start]) return steps;
+
+      // Children ordered left-to-right by X coordinate on canvas
       function getChildren(nodeId) {
         return graphData.edges
           .filter(e => e.from === nodeId)
@@ -283,10 +517,10 @@
           .map(n => n.id);
       }
 
-      // Initialize: SL = [A]; NSL = [A]; DE = [ ]; CS = A;
-      let CS = startId;
-      let SL = [startId];
-      let NSL = [startId];
+      // Step 1: Initialize SL = [Start]; NSL = [Start]; DE = [ ]; CS = Start;
+      let CS = start;
+      let SL = [start];
+      let NSL = [start];
       let DE = [];
       let iter = 0;
 
@@ -299,38 +533,37 @@
         actionType: 'init',
         description: `Initialize: SL = [${SL.join(' ')}]; NSL = [${NSL.join(' ')}]; DE = [ ]; CS = ${CS};`,
         activeRuleLine: 1,
-        activeNode: CS,
         backtrackEdge: null
       });
 
       const maxIter = 100;
 
+      // Step 2: WHILE NSL ≠ [ ] DO:
       while (NSL.length > 0 && iter < maxIter) {
-        // If CS = goal, terminate with success
-        if (CS === goalId) {
-          steps[steps.length - 1].description += ` -> GOAL ${goalId} REACHED!`;
+        // Goal check
+        if (CS === goal) {
+          steps[steps.length - 1].description += ` -> GOAL (${goal}) REACHED!`;
           break;
         }
 
-        // Generate children of CS that are not in DE, SL, or NSL
+        // Generate children of CS not in DE, SL, or NSL
         const allChildren = getChildren(CS);
         const unvisitedChildren = allChildren.filter(c => !DE.includes(c) && !SL.includes(c) && !NSL.includes(c));
 
         if (unvisitedChildren.length === 0) {
-          // Dead-End: CS has no unvisited children
-          const backtrackOrigin = CS;
+          // Dead-end: CS has no unvisited children
+          const originDead = CS;
+
           while (SL.length > 0 && CS === SL[0]) {
-            // Add CS to DE: [CS | DE]
+            // DE = [CS | DE]
             if (!DE.includes(CS)) {
               DE = [CS, ...DE];
             }
-            // Remove head of SL
+            // SL = cdr(SL); NSL = cdr(NSL);
             SL = SL.slice(1);
-            // Remove head of NSL
             NSL = NSL.slice(1);
 
             if (NSL.length === 0) break;
-
             CS = NSL[0];
           }
 
@@ -346,14 +579,12 @@
             NSL: [...NSL],
             DE: [...DE],
             actionType: 'backtrack',
-            description: `Dead-end encountered at ${backtrackOrigin}. Backtracked up SL path and added to DE. Next candidate state CS = ${CS}.`,
+            description: `Dead-end at ${originDead}. Added to DE. Backtracked to candidate CS = ${CS}.`,
             activeRuleLine: 7,
-            activeNode: CS,
-            backtrackEdge: { from: backtrackOrigin, to: CS }
+            backtrackEdge: { from: originDead, to: CS }
           });
         } else {
-          // CS has children:
-          // Place children of CS on front of NSL in left-to-right order
+          // Children available: NSL = append(children, NSL); CS = car(NSL); SL = [CS | SL];
           NSL = [...unvisitedChildren, ...NSL];
           CS = NSL[0];
           SL = [CS, ...SL];
@@ -366,15 +597,14 @@
             NSL: [...NSL],
             DE: [...DE],
             actionType: 'expand',
-            description: `Generated children [${unvisitedChildren.join(' ')}] of previous state. Placed on front of NSL. New CS = ${CS}.`,
+            description: `Expanded unvisited children [${unvisitedChildren.join(' ')}]. Added to front of NSL. CS = ${CS}.`,
             activeRuleLine: 11,
-            activeNode: CS,
             backtrackEdge: null
           });
         }
 
-        if (CS === goalId) {
-          steps[steps.length - 1].description += ` -> GOAL ${goalId} REACHED!`;
+        if (CS === goal) {
+          steps[steps.length - 1].description += ` -> GOAL (${goal}) REACHED!`;
           break;
         }
       }
@@ -384,75 +614,74 @@
 
     // --- Render Graph SVG ---
     function renderGraph() {
-      const svg = document.getElementById('graphSvg');
       const layerEdges = document.getElementById('layerEdges');
-      const layerBacktrack = document.getElementById('layerBacktrackOverlay');
+      const layerBacktrack = document.getElementById('layerBacktrack');
       const layerNodes = document.getElementById('layerNodes');
+      if (!layerEdges || !layerBacktrack || !layerNodes) return;
 
       layerEdges.innerHTML = '';
       layerBacktrack.innerHTML = '';
       layerNodes.innerHTML = '';
 
-      const currentStep = traceSteps[currentStepIdx] || {
-        CS: null, SL: [], NSL: [], DE: []
-      };
+      const currentStep = traceSteps[currentStepIdx] || { CS: null, SL: [], NSL: [], DE: [] };
 
-      // 1. Render Directed Edges
+      // 1. Draw Edges
       graph.edges.forEach(edge => {
         const u = graph.nodes[edge.from];
         const v = graph.nodes[edge.to];
         if (!u || !v) return;
 
-        let isInPath = false;
+        // Is edge in active SL path?
+        let inSLPath = false;
         if (currentStep.SL && currentStep.SL.length > 1) {
           for (let i = 0; i < currentStep.SL.length - 1; i++) {
-            if (currentStep.SL[i] === v.id && currentStep.SL[i+1] === u.id) {
-              isInPath = true;
+            if (currentStep.SL[i] === v.id && currentStep.SL[i + 1] === u.id) {
+              inSLPath = true;
               break;
             }
           }
         }
 
-        const edgeEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        edgeEl.setAttribute('x1', u.x);
-        edgeEl.setAttribute('y1', u.y);
-        edgeEl.setAttribute('x2', v.x);
-        edgeEl.setAttribute('y2', v.y);
-        edgeEl.setAttribute('stroke', isInPath ? '#38bdf8' : '#475569');
-        edgeEl.setAttribute('stroke-width', isInPath ? '3' : '2');
-        edgeEl.setAttribute('marker-end', isInPath ? 'url(#arrow-active)' : 'url(#arrow)');
-        edgeEl.classList.add('transition-all', 'duration-300');
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', u.x);
+        line.setAttribute('y1', u.y);
+        line.setAttribute('x2', v.x);
+        line.setAttribute('y2', v.y);
+        line.setAttribute('stroke', inSLPath ? '#38bdf8' : '#475569');
+        line.setAttribute('stroke-width', inSLPath ? '3' : '2');
+        line.setAttribute('marker-end', inSLPath ? 'url(#arrow-active)' : 'url(#arrow)');
+        line.style.cursor = currentTool === 'delete' ? 'pointer' : 'default';
 
-        edgeEl.addEventListener('click', (e) => {
+        line.addEventListener('click', (e) => {
           if (currentTool === 'delete') {
             e.stopPropagation();
             graph.edges = graph.edges.filter(ed => !(ed.from === edge.from && ed.to === edge.to));
-            recalculateAndRefresh();
+            recomputeTrace();
           }
         });
 
-        layerEdges.appendChild(edgeEl);
+        layerEdges.appendChild(line);
       });
 
-      // 2. Render Backtracking dashed return curve
+      // 2. Draw Backtracking Return Arc
       if (currentStep.actionType === 'backtrack' && currentStep.backtrackEdge) {
         const fromNode = graph.nodes[currentStep.backtrackEdge.from];
         const toNode = graph.nodes[currentStep.backtrackEdge.to];
         if (fromNode && toNode) {
-          const pathArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const midX = (fromNode.x + toNode.x) / 2;
-          const midY = Math.min(fromNode.y, toNode.y) - 30;
-          pathArc.setAttribute('d', `M ${fromNode.x} ${fromNode.y} Q ${midX} ${midY} ${toNode.x} ${toNode.y}`);
-          pathArc.setAttribute('fill', 'none');
-          pathArc.setAttribute('stroke', '#f43f5e');
-          pathArc.setAttribute('stroke-width', '2.5');
-          pathArc.setAttribute('stroke-dasharray', '5 4');
-          pathArc.setAttribute('marker-end', 'url(#arrow-backtrack)');
-          layerBacktrack.appendChild(pathArc);
+          const midY = Math.min(fromNode.y, toNode.y) - 35;
+          arc.setAttribute('d', `M ${fromNode.x} ${fromNode.y} Q ${midX} ${midY} ${toNode.x} ${toNode.y}`);
+          arc.setAttribute('fill', 'none');
+          arc.setAttribute('stroke', '#f43f5e');
+          arc.setAttribute('stroke-width', '2.5');
+          arc.setAttribute('stroke-dasharray', '6 4');
+          arc.setAttribute('marker-end', 'url(#arrow-backtrack)');
+          layerBacktrack.appendChild(arc);
         }
       }
 
-      // Compute textbook visit sequence (1..10) across steps
+      // Compute visit order numbers (1..10) matching Fig 3.14
       const visitOrderMap = {};
       let visitSeq = 1;
       traceSteps.forEach(s => {
@@ -461,7 +690,7 @@
         }
       });
 
-      // 3. Render Nodes
+      // 3. Draw Nodes
       Object.values(graph.nodes).forEach(node => {
         const isCS = currentStep.CS === node.id;
         const isInSL = currentStep.SL && currentStep.SL.includes(node.id);
@@ -469,13 +698,13 @@
         const isInNSL = currentStep.NSL && currentStep.NSL.includes(node.id);
         const isStart = node.id === startNodeId;
         const isGoal = node.id === goalNodeId;
+        const isSourceSelected = selectedSourceNode === node.id;
 
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
         g.setAttribute('cursor', currentTool === 'select' ? 'grab' : 'pointer');
-        g.dataset.id = node.id;
 
-        // Pulse ring for active CS
+        // CS Pulse Ring
         if (isCS) {
           const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
           pulse.setAttribute('r', '24');
@@ -486,15 +715,15 @@
           g.appendChild(pulse);
         }
 
-        // Selection ring for edge connection
-        if (selectedNodeForEdge === node.id) {
-          const edgeRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          edgeRing.setAttribute('r', '26');
-          edgeRing.setAttribute('fill', 'none');
-          edgeRing.setAttribute('stroke', '#a855f7');
-          edgeRing.setAttribute('stroke-width', '3');
-          edgeRing.setAttribute('stroke-dasharray', '4 3');
-          g.appendChild(edgeRing);
+        // Connecting Highlight Halo
+        if (isSourceSelected) {
+          const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          halo.setAttribute('r', '27');
+          halo.setAttribute('fill', 'none');
+          halo.setAttribute('stroke', '#a855f7');
+          halo.setAttribute('stroke-width', '3');
+          halo.setAttribute('stroke-dasharray', '4 3');
+          g.appendChild(halo);
         }
 
         // Base Circle
@@ -532,7 +761,7 @@
           circle.setAttribute('stroke-width', isCS ? '3.5' : '2.5');
         }
 
-        // Node label
+        // Label
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('dominant-baseline', 'central');
@@ -542,35 +771,36 @@
         text.setAttribute('pointer-events', 'none');
         text.textContent = node.label;
 
-        // Visit sequence badge matching Figure 3.14 (1..10)
+        // Figure 3.14 Visit Order Badge (1..10)
         if (visitOrderMap[node.id]) {
-          const seqText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          seqText.setAttribute('x', '24');
-          seqText.setAttribute('y', '-12');
-          seqText.setAttribute('font-size', '11');
-          seqText.setAttribute('font-weight', '700');
-          seqText.setAttribute('fill', '#94a3b8');
-          seqText.setAttribute('pointer-events', 'none');
-          seqText.textContent = visitOrderMap[node.id];
-          g.appendChild(seqText);
+          const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          badge.setAttribute('x', '24');
+          badge.setAttribute('y', '-12');
+          badge.setAttribute('font-size', '11');
+          badge.setAttribute('font-weight', '700');
+          badge.setAttribute('fill', '#94a3b8');
+          badge.setAttribute('pointer-events', 'none');
+          badge.textContent = visitOrderMap[node.id];
+          g.appendChild(badge);
         }
 
-        // Start / Goal badges
+        // Start / Goal Indicator
         if (isStart || isGoal) {
-          const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          badge.setAttribute('y', '-25');
-          badge.setAttribute('text-anchor', 'middle');
-          badge.setAttribute('font-size', '9');
-          badge.setAttribute('font-weight', '700');
-          badge.setAttribute('fill', isStart ? '#34d399' : '#fbbf24');
-          badge.setAttribute('pointer-events', 'none');
-          badge.textContent = isStart ? 'START' : 'GOAL';
-          g.appendChild(badge);
+          const tag = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          tag.setAttribute('y', '-26');
+          tag.setAttribute('text-anchor', 'middle');
+          tag.setAttribute('font-size', '9');
+          tag.setAttribute('font-weight', '800');
+          tag.setAttribute('fill', isStart ? '#34d399' : '#fbbf24');
+          tag.setAttribute('pointer-events', 'none');
+          tag.textContent = isStart ? 'START' : 'GOAL';
+          g.appendChild(tag);
         }
 
         g.appendChild(circle);
         g.appendChild(text);
 
+        // Events
         g.addEventListener('mousedown', (e) => onNodeMouseDown(e, node.id));
         g.addEventListener('click', (e) => onNodeClick(e, node.id));
 
@@ -578,34 +808,29 @@
       });
     }
 
-    // --- Update Trace Table and Step Visuals ---
-    function safeText(id, text) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = text;
-    }
-
+    // --- Trace UI & Table Refresh ---
     function updateUI() {
       if (traceSteps.length === 0) return;
       const step = traceSteps[currentStepIdx];
 
-      safeText('stepCounter', `${step.iter} / ${traceSteps[traceSteps.length - 1].iter}`);
+      safeText('cardIter', `${step.iter} / ${traceSteps[traceSteps.length - 1].iter}`);
       safeText('cardCS', step.CS || 'None');
       safeText('cardSL', `[${step.SL.join(' ')}]`);
       safeText('cardNSL', `[${step.NSL.join(' ')}]`);
-      safeText('cardDE', step.DE && step.DE.length ? `[${step.DE.join(' ')}]` : '[ ]');
-      safeText('actionExplanation', step.description || '');
+      safeText('cardDE', step.DE.length ? `[${step.DE.join(' ')}]` : '[ ]');
+      safeText('cardExplanation', step.description || '');
 
+      // Highlight active rule in pseudocode
       for (let i = 1; i <= 13; i++) {
-        const el = document.getElementById(`codeLine${i}`);
+        const el = document.getElementById(`ruleLine${i}`);
         if (el) el.classList.remove('bg-indigo-600/40', 'text-white', 'font-bold');
       }
       if (step.activeRuleLine) {
-        const activeEl = document.getElementById(`codeLine${step.activeRuleLine}`);
-        if (activeEl) {
-          activeEl.classList.add('bg-indigo-600/40', 'text-white', 'font-bold');
-        }
+        const activeRule = document.getElementById(`ruleLine${step.activeRuleLine}`);
+        if (activeRule) activeRule.classList.add('bg-indigo-600/40', 'text-white', 'font-bold');
       }
 
+      // Highlight corresponding row in Trace Table
       document.querySelectorAll('#traceTableBody tr').forEach(row => {
         row.classList.remove('bg-indigo-950/70', 'border-l-4', 'border-indigo-500', 'font-bold', 'text-white');
       });
@@ -615,13 +840,15 @@
         activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      safeText('quizCurrentIter', step.iter);
+      // Quiz mode prompt update
+      safeText('quizIterLabel', step.iter);
 
       renderGraph();
     }
 
     function renderTraceTable() {
       const tbody = document.getElementById('traceTableBody');
+      if (!tbody) return;
       tbody.innerHTML = '';
 
       traceSteps.forEach((step, idx) => {
@@ -636,7 +863,7 @@
           <td class="py-2.5 px-4 text-rose-300 font-medium">${step.DE.length ? `[${step.DE.join(' ')}]` : '[ ]'}</td>
         `;
         tr.addEventListener('click', () => {
-          pauseAutoPlay();
+          pauseSimulation();
           currentStepIdx = idx;
           updateUI();
         });
@@ -644,50 +871,46 @@
       });
     }
 
-    // Refresh Selectors for Start and Goal nodes
-    function updateNodeSelectors() {
+    function updateStartGoalSelectors() {
       const startSelect = document.getElementById('selectStartNode');
       const goalSelect = document.getElementById('selectGoalNode');
-      if (startSelect) startSelect.innerHTML = '';
-      if (goalSelect) goalSelect.innerHTML = '';
+      if (!startSelect || !goalSelect) return;
+
+      startSelect.innerHTML = '';
+      goalSelect.innerHTML = '';
 
       const nodeKeys = Object.keys(graph.nodes).sort();
       nodeKeys.forEach(id => {
-        if (startSelect) {
-          const opt1 = document.createElement('option');
-          opt1.value = id;
-          opt1.textContent = id;
-          if (id === startNodeId) opt1.selected = true;
-          startSelect.appendChild(opt1);
-        }
+        const opt1 = document.createElement('option');
+        opt1.value = id;
+        opt1.textContent = id;
+        if (id === startNodeId) opt1.selected = true;
+        startSelect.appendChild(opt1);
 
-        if (goalSelect) {
-          const opt2 = document.createElement('option');
-          opt2.value = id;
-          opt2.textContent = id;
-          if (id === goalNodeId) opt2.selected = true;
-          goalSelect.appendChild(opt2);
-        }
+        const opt2 = document.createElement('option');
+        opt2.value = id;
+        opt2.textContent = id;
+        if (id === goalNodeId) opt2.selected = true;
+        goalSelect.appendChild(opt2);
       });
     }
 
-    function recalculateAndRefresh() {
+    function recomputeTrace() {
       traceSteps = generateBacktrackingTrace(graph, startNodeId, goalNodeId);
       currentStepIdx = 0;
-      updateNodeSelectors();
+      updateStartGoalSelectors();
       renderTraceTable();
       updateUI();
     }
 
-    // --- Automatic Hierarchical Tree Layout Engine ---
+    // --- Hierarchical Auto-Layout Engine ---
     function applyAutoLayout() {
-      if (Object.keys(graph.nodes).length === 0) return;
+      const nodeKeys = Object.keys(graph.nodes);
+      if (nodeKeys.length === 0) return;
 
+      const root = (startNodeId && graph.nodes[startNodeId]) ? startNodeId : nodeKeys[0];
       const levels = {};
       const visited = new Set();
-      const root = startNodeId && graph.nodes[startNodeId] ? startNodeId : Object.keys(graph.nodes)[0];
-
-      // BFS to assign hierarchy levels
       const queue = [{ id: root, level: 0 }];
       visited.add(root);
 
@@ -700,61 +923,50 @@
           .filter(e => e.from === id)
           .map(e => e.to);
 
-        children.forEach(child => {
-          if (!visited.has(child) && graph.nodes[child]) {
-            visited.add(child);
-            queue.push({ id: child, level: level + 1 });
+        children.forEach(c => {
+          if (!visited.has(c) && graph.nodes[c]) {
+            visited.add(c);
+            queue.push({ id: c, level: level + 1 });
           }
         });
       }
 
-      // Add any disconnected nodes to base level
-      Object.keys(graph.nodes).forEach(n => {
-        if (!visited.has(n)) {
+      nodeKeys.forEach(id => {
+        if (!visited.has(id)) {
           const maxLevel = Math.max(...Object.keys(levels).map(Number), 0);
           if (!levels[maxLevel]) levels[maxLevel] = [];
-          levels[maxLevel].push(n);
+          levels[maxLevel].push(id);
         }
       });
 
-      const svgEl = document.getElementById('graphSvg');
-      const width = (svgEl && svgEl.clientWidth) ? svgEl.clientWidth : 600;
-      const height = (svgEl && svgEl.clientHeight) ? svgEl.clientHeight : 450;
-      const levelCount = Object.keys(levels).length;
-      const verticalGap = (height - 100) / Math.max(levelCount, 1);
+      const svgEl = document.getElementById('treeSvg');
+      const width = (svgEl && svgEl.clientWidth) ? svgEl.clientWidth : 580;
+      const height = (svgEl && svgEl.clientHeight) ? svgEl.clientHeight : 440;
+      const totalLevels = Object.keys(levels).length;
+      const vGap = (height - 90) / Math.max(totalLevels, 1);
 
-      Object.entries(levels).forEach(([lvlStr, nodeIds]) => {
+      Object.entries(levels).forEach(([lvlStr, ids]) => {
         const lvl = parseInt(lvlStr);
-        const y = 60 + lvl * verticalGap;
-        const horizontalGap = width / (nodeIds.length + 1);
+        const y = 60 + lvl * vGap;
+        const hGap = width / (ids.length + 1);
 
-        nodeIds.forEach((nid, index) => {
+        ids.forEach((nid, idx) => {
           if (graph.nodes[nid]) {
-            graph.nodes[nid].x = Math.round((index + 1) * horizontalGap);
+            graph.nodes[nid].x = Math.round((idx + 1) * hGap);
             graph.nodes[nid].y = Math.round(y);
           }
         });
       });
 
-      recalculateAndRefresh();
+      recomputeTrace();
     }
 
-    // Safe Event Listener Binder
-    function safeOn(id, event, handler) {
-      const el = document.getElementById(id);
-      if (el) {
-        el.addEventListener(event, handler);
-      }
-    }
-
-    safeOn('btnAutoLayout', 'click', applyAutoLayout);
-
-    // --- Graph Canvas Interaction Handlers ---
-    const svg = document.getElementById('graphSvg');
+    // --- Interactive Canvas Mouse & Touch Mechanics ---
+    const svgEl = document.getElementById('treeSvg');
 
     function getSvgCoordinates(e) {
-      if (!svg) return { x: 0, y: 0 };
-      const rect = svg.getBoundingClientRect();
+      if (!svgEl) return { x: 0, y: 0 };
+      const rect = svgEl.getBoundingClientRect();
       return {
         x: Math.round(e.clientX - rect.left),
         y: Math.round(e.clientY - rect.top)
@@ -772,163 +984,115 @@
     }
 
     window.addEventListener('mousemove', (e) => {
-      if (!draggingNodeId || currentTool !== 'select') return;
-      const coords = getSvgCoordinates(e);
-      const node = graph.nodes[draggingNodeId];
-      if (node && svg) {
-        node.x = Math.max(30, Math.min(svg.clientWidth - 30, coords.x - dragOffset.x));
-        node.y = Math.max(30, Math.min(svg.clientHeight - 30, coords.y - dragOffset.y));
-        renderGraph();
+      // 1. Dragging Node
+      if (draggingNodeId && currentTool === 'select') {
+        const coords = getSvgCoordinates(e);
+        const node = graph.nodes[draggingNodeId];
+        if (node && svgEl) {
+          node.x = Math.max(30, Math.min(svgEl.clientWidth - 30, coords.x - dragOffset.x));
+          node.y = Math.max(30, Math.min(svgEl.clientHeight - 30, coords.y - dragOffset.y));
+          renderGraph();
+        }
+      }
+
+      // 2. Rubberband Guide Arrow during Edge connection
+      if (currentTool === 'addEdge' && selectedSourceNode) {
+        const line = document.getElementById('rubberbandLine');
+        const src = graph.nodes[selectedSourceNode];
+        if (line && src) {
+          const coords = getSvgCoordinates(e);
+          line.setAttribute('x1', src.x);
+          line.setAttribute('y1', src.y);
+          line.setAttribute('x2', coords.x);
+          line.setAttribute('y2', coords.y);
+          line.classList.remove('hidden');
+        }
       }
     });
 
     window.addEventListener('mouseup', () => {
       if (draggingNodeId) {
         draggingNodeId = null;
-        recalculateAndRefresh();
+        recomputeTrace();
       }
     });
+
+    function resetEdgeCreation() {
+      selectedSourceNode = null;
+      const line = document.getElementById('rubberbandLine');
+      if (line) line.classList.add('hidden');
+      const cancelBtn = document.getElementById('btnCancelConnecting');
+      if (cancelBtn) cancelBtn.classList.add('hidden');
+      safeText('canvasStatusTip', 'Click source parent node, then click target child node.');
+      renderGraph();
+    }
 
     function onNodeClick(e, nodeId) {
       e.stopPropagation();
 
+      // Tool: Delete
       if (currentTool === 'delete') {
         delete graph.nodes[nodeId];
         graph.edges = graph.edges.filter(ed => ed.from !== nodeId && ed.to !== nodeId);
         if (startNodeId === nodeId) startNodeId = Object.keys(graph.nodes)[0] || '';
         if (goalNodeId === nodeId) goalNodeId = Object.keys(graph.nodes)[1] || Object.keys(graph.nodes)[0] || '';
-        recalculateAndRefresh();
+        recomputeTrace();
         return;
       }
 
+      // Tool: Add Edge
       if (currentTool === 'addEdge') {
-        const statusTip = document.getElementById('canvasStatusTip');
-        if (!selectedNodeForEdge) {
-          selectedNodeForEdge = nodeId;
-          if (statusTip) statusTip.textContent = `Edge source selected: ${nodeId}. Now click child/target node.`;
+        if (!selectedSourceNode) {
+          // Select source
+          selectedSourceNode = nodeId;
+          safeText('canvasStatusTip', `Source selected: [${nodeId}]. Now click target child node.`);
+          const cancelBtn = document.getElementById('btnCancelConnecting');
+          if (cancelBtn) cancelBtn.classList.remove('hidden');
           renderGraph();
         } else {
-          if (selectedNodeForEdge !== nodeId) {
-            const exists = graph.edges.some(ed => ed.from === selectedNodeForEdge && ed.to === nodeId);
+          // Connect target
+          if (selectedSourceNode !== nodeId) {
+            const exists = graph.edges.some(ed => ed.from === selectedSourceNode && ed.to === nodeId);
             if (!exists) {
-              graph.edges.push({ from: selectedNodeForEdge, to: nodeId });
-              if (statusTip) statusTip.textContent = `Edge created: ${selectedNodeForEdge} -> ${nodeId}`;
-              recalculateAndRefresh();
+              graph.edges.push({ from: selectedSourceNode, to: nodeId });
+              safeText('canvasStatusTip', `Created edge: ${selectedSourceNode} -> ${nodeId}`);
+              recomputeTrace();
             }
           }
-          selectedNodeForEdge = null;
-          renderGraph();
+          resetEdgeCreation();
         }
       }
     }
 
-    if (svg) {
-      svg.addEventListener('click', (e) => {
+    if (svgEl) {
+      svgEl.addEventListener('click', (e) => {
         if (currentTool === 'addNode') {
           const coords = getSvgCoordinates(e);
-          const existingLabels = Object.values(graph.nodes).map(n => n.label);
-          let nextChar = 'A';
+          const labels = Object.values(graph.nodes).map(n => n.label);
+          let newChar = 'A';
           for (let i = 65; i <= 90; i++) {
-            const char = String.fromCharCode(i);
-            if (!existingLabels.includes(char)) {
-              nextChar = char;
+            const ch = String.fromCharCode(i);
+            if (!labels.includes(ch)) {
+              newChar = ch;
               break;
             }
           }
-          graph.nodes[nextChar] = {
-            id: nextChar,
-            label: nextChar,
-            x: coords.x,
-            y: coords.y
-          };
-          recalculateAndRefresh();
+          graph.nodes[newChar] = { id: newChar, label: newChar, x: coords.x, y: coords.y };
+          recomputeTrace();
         } else if (currentTool === 'addEdge') {
-          selectedNodeForEdge = null;
-          const statusTip = document.getElementById('canvasStatusTip');
-          if (statusTip) statusTip.textContent = 'Edge creation canceled. Click a parent node to begin.';
-          renderGraph();
+          resetEdgeCreation();
         }
       });
     }
 
-    // --- Playback Controls ---
-    function pauseAutoPlay() {
-      isPlaying = false;
-      if (playTimer) clearInterval(playTimer);
-      playTimer = null;
-      const playText = document.getElementById('playText');
-      const playIcon = document.getElementById('playIcon');
-      if (playText) playText.textContent = 'Play';
-      if (playIcon) playIcon.setAttribute('data-lucide', 'play');
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function toggleAutoPlay() {
-      if (isPlaying) {
-        pauseAutoPlay();
-      } else {
-        if (currentStepIdx >= traceSteps.length - 1) {
-          currentStepIdx = 0;
-        }
-        isPlaying = true;
-        const playText = document.getElementById('playText');
-        const playIcon = document.getElementById('playIcon');
-        if (playText) playText.textContent = 'Pause';
-        if (playIcon) playIcon.setAttribute('data-lucide', 'pause');
-        if (window.lucide) lucide.createIcons();
-
-        const slider = document.getElementById('sliderSpeed');
-        const speed = slider ? parseInt(slider.value) : 1000;
-        playTimer = setInterval(() => {
-          if (currentStepIdx < traceSteps.length - 1) {
-            currentStepIdx++;
-            updateUI();
-          } else {
-            pauseAutoPlay();
-          }
-        }, speed);
-      }
-    }
-
-    safeOn('btnPlay', 'click', toggleAutoPlay);
-    safeOn('btnNext', 'click', () => {
-      pauseAutoPlay();
-      if (currentStepIdx < traceSteps.length - 1) {
-        currentStepIdx++;
-        updateUI();
-      }
-    });
-    safeOn('btnPrev', 'click', () => {
-      pauseAutoPlay();
-      if (currentStepIdx > 0) {
-        currentStepIdx--;
-        updateUI();
-      }
-    });
-    safeOn('btnFirst', 'click', () => {
-      pauseAutoPlay();
-      currentStepIdx = 0;
-      updateUI();
-    });
-    safeOn('btnLast', 'click', () => {
-      pauseAutoPlay();
-      currentStepIdx = traceSteps.length - 1;
-      updateUI();
-    });
-    safeOn('btnReset', 'click', () => {
-      pauseAutoPlay();
-      currentStepIdx = 0;
-      updateUI();
-    });
-
-    safeOn('sliderSpeed', 'input', () => {
-      if (isPlaying) {
-        pauseAutoPlay();
-        toggleAutoPlay();
+    // Keyboard Esc listener to cancel edge creation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && currentTool === 'addEdge') {
+        resetEdgeCreation();
       }
     });
 
-    // --- Toolbar Button States ---
+    // --- Tool Switching ---
     const toolButtons = {
       select: document.getElementById('toolSelect'),
       addNode: document.getElementById('toolAddNode'),
@@ -938,264 +1102,188 @@
 
     function setActiveTool(tool) {
       currentTool = tool;
-      selectedNodeForEdge = null;
-      Object.keys(toolButtons).forEach(t => {
-        const btn = toolButtons[t];
-        if (btn) {
-          if (t === tool) {
-            btn.className = 'px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-indigo-600 text-white border border-indigo-500/50 shadow-sm';
-          } else {
-            btn.className = 'px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700';
-          }
+      resetEdgeCreation();
+
+      Object.entries(toolButtons).forEach(([t, btn]) => {
+        if (!btn) return;
+        if (t === tool) {
+          btn.className = 'px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-indigo-600 text-white border border-indigo-500/50 shadow-sm transition';
+        } else {
+          btn.className = 'px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition';
         }
       });
 
-      const tipMap = {
-        select: 'Drag nodes to reposition. Left-to-right order dictates child expansion order.',
+      const tips = {
+        select: 'Drag nodes to reposition. Left-to-right order dictates branch expansion.',
         addNode: 'Click anywhere on canvas to drop a new node.',
-        addEdge: 'Click the source parent node, then click the target child node.',
-        delete: 'Click any node or edge to remove it.'
+        addEdge: 'Click source parent node, then click target child node.',
+        delete: 'Click any node or directed edge to delete it.'
       };
-      const statusTip = document.getElementById('canvasStatusTip');
-      if (statusTip) statusTip.textContent = tipMap[tool];
+      safeText('canvasStatusTip', tips[tool] || '');
       renderGraph();
     }
 
-    if (toolButtons.select) toolButtons.select.addEventListener('click', () => setActiveTool('select'));
-    if (toolButtons.addNode) toolButtons.addNode.addEventListener('click', () => setActiveTool('addNode'));
-    if (toolButtons.addEdge) toolButtons.addEdge.addEventListener('click', () => setActiveTool('addEdge'));
-    if (toolButtons.delete) toolButtons.delete.addEventListener('click', () => setActiveTool('delete'));
-
-    safeOn('btnClearGraph', 'click', () => {
-      pauseAutoPlay();
-      graph = { nodes: {}, edges: [] };
-      startNodeId = '';
-      goalNodeId = '';
-      recalculateAndRefresh();
+    Object.entries(toolButtons).forEach(([tool, btn]) => {
+      if (btn) btn.addEventListener('click', () => setActiveTool(tool));
     });
 
-    // Preset Loaders
-    function loadPreset(presetKey) {
-      pauseAutoPlay();
-      const p = PRESETS[presetKey];
-      if (!p) return;
+    const cancelConnectBtn = document.getElementById('btnCancelConnecting');
+    if (cancelConnectBtn) {
+      cancelConnectBtn.addEventListener('click', resetEdgeCreation);
+    }
+
+    // --- Simulation Transport Playback ---
+    function pauseSimulation() {
+      isPlaying = false;
+      if (playTimer) clearInterval(playTimer);
+      playTimer = null;
+      safeText('playText', 'Play');
+      const icon = document.getElementById('playIcon');
+      if (icon) icon.setAttribute('data-lucide', 'play');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function toggleSimulation() {
+      if (isPlaying) {
+        pauseSimulation();
+      } else {
+        if (currentStepIdx >= traceSteps.length - 1) currentStepIdx = 0;
+        isPlaying = true;
+        safeText('playText', 'Pause');
+        const icon = document.getElementById('playIcon');
+        if (icon) icon.setAttribute('data-lucide', 'pause');
+        if (window.lucide) lucide.createIcons();
+
+        const slider = document.getElementById('sliderSpeed');
+        const interval = slider ? parseInt(slider.value) : 1000;
+
+        playTimer = setInterval(() => {
+          if (currentStepIdx < traceSteps.length - 1) {
+            currentStepIdx++;
+            updateUI();
+          } else {
+            pauseSimulation();
+          }
+        }, interval);
+      }
+    }
+
+    function bindClick(id, fn) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('click', fn);
+    }
+
+    bindClick('btnPlay', toggleSimulation);
+    bindClick('btnNext', () => {
+      pauseSimulation();
+      if (currentStepIdx < traceSteps.length - 1) {
+        currentStepIdx++;
+        updateUI();
+      }
+    });
+    bindClick('btnPrev', () => {
+      pauseSimulation();
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        updateUI();
+      }
+    });
+    bindClick('btnFirst', () => {
+      pauseSimulation();
+      currentStepIdx = 0;
+      updateUI();
+    });
+    bindClick('btnLast', () => {
+      pauseSimulation();
+      currentStepIdx = traceSteps.length - 1;
+      updateUI();
+    });
+    bindClick('btnReset', () => {
+      pauseSimulation();
+      currentStepIdx = 0;
+      updateUI();
+    });
+
+    const speedSlider = document.getElementById('sliderSpeed');
+    if (speedSlider) {
+      speedSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        safeText('labelSpeed', `${(val / 1000).toFixed(1)}s`);
+        if (isPlaying) {
+          pauseSimulation();
+          toggleSimulation();
+        }
+      });
+    }
+
+    // --- Presets Loaders ---
+    function loadPresetData(p) {
+      pauseSimulation();
       graph = {
         nodes: JSON.parse(JSON.stringify(p.nodes)),
         edges: JSON.parse(JSON.stringify(p.edges))
       };
       startNodeId = p.start;
       goalNodeId = p.goal;
-      recalculateAndRefresh();
+      recomputeTrace();
     }
 
-    safeOn('btnPresetFig314', 'click', () => loadPreset('figure314'));
-    safeOn('btnPresetSimple', 'click', () => loadPreset('simpleBinary'));
-    safeOn('btnPresetDeadEnd', 'click', () => loadPreset('deadEndMaze'));
+    bindClick('btnPresetBook', () => loadPresetData(PRESET_FIG_314));
+    bindClick('btnPresetBinary', () => loadPresetData(PRESET_BINARY));
+    bindClick('btnPresetDeadEnd', () => loadPresetData(PRESET_DEADEND));
+    bindClick('btnAutoLayout', applyAutoLayout);
 
-    // Start / Goal Select changes
-    safeOn('selectStartNode', 'change', (e) => {
-      startNodeId = e.target.value;
-      recalculateAndRefresh();
-    });
-    safeOn('selectGoalNode', 'change', (e) => {
-      goalNodeId = e.target.value;
-      recalculateAndRefresh();
-    });
-    safeOn('btnRecompute', 'click', recalculateAndRefresh);
+    // Node selectors change
+    const selStart = document.getElementById('selectStartNode');
+    if (selStart) {
+      selStart.addEventListener('change', (e) => {
+        startNodeId = e.target.value;
+        recomputeTrace();
+      });
+    }
+    const selGoal = document.getElementById('selectGoalNode');
+    if (selGoal) {
+      selGoal.addEventListener('change', (e) => {
+        goalNodeId = e.target.value;
+        recomputeTrace();
+      });
+    }
+    bindClick('btnRecompute', recomputeTrace);
 
-    // Pseudocode Accordion Toggle
+    // Toggle Pseudocode Accordion
     let algoOpen = true;
-    safeOn('toggleAlgo', 'click', () => {
+    bindClick('btnToggleAlgo', () => {
       algoOpen = !algoOpen;
       const content = document.getElementById('algoContent');
-      const chevron = document.getElementById('algoChevron');
-      if (algoOpen) {
-        if (content) content.classList.remove('hidden');
-        if (chevron) chevron.style.transform = 'rotate(0deg)';
-      } else {
-        if (content) content.classList.add('hidden');
-        if (chevron) chevron.style.transform = 'rotate(-90deg)';
-      }
+      const chev = document.getElementById('algoChevron');
+      if (content) content.classList.toggle('hidden', !algoOpen);
+      if (chev) chev.style.transform = algoOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
     });
 
-    // Tab Switcher
-    const tabExplore = document.getElementById('tabExplore');
-    const tabPractice = document.getElementById('tabPractice');
-    const viewExplore = document.getElementById('viewExplore');
-    const viewPractice = document.getElementById('viewPractice');
+    // --- Tab Switching: Simulator vs Practice Quiz ---
+    const btnTabSim = document.getElementById('btnTabSim');
+    const btnTabQuiz = document.getElementById('btnTabQuiz');
+    const viewSim = document.getElementById('viewSimulator');
+    const viewQuiz = document.getElementById('viewQuiz');
 
-    if (tabExplore) {
-      tabExplore.addEventListener('click', () => {
-        tabExplore.className = 'px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition';
-        if (tabPractice) tabPractice.className = 'px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
-        if (viewExplore) viewExplore.classList.remove('hidden');
-        if (viewPractice) viewPractice.classList.add('hidden');
+    if (btnTabSim && btnTabQuiz && viewSim && viewQuiz) {
+      btnTabSim.addEventListener('click', () => {
+        btnTabSim.className = 'px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition';
+        btnTabQuiz.className = 'px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
+        viewSim.classList.remove('hidden');
+        viewQuiz.classList.add('hidden');
+      });
+
+      btnTabQuiz.addEventListener('click', () => {
+        btnTabQuiz.className = 'px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition';
+        btnTabSim.className = 'px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
+        viewQuiz.classList.remove('hidden');
+        viewSim.classList.add('hidden');
       });
     }
 
-    if (tabPractice) {
-      tabPractice.addEventListener('click', () => {
-        tabPractice.className = 'px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition';
-        if (tabExplore) tabExplore.className = 'px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
-        if (viewPractice) viewPractice.classList.remove('hidden');
-        if (viewExplore) viewExplore.classList.add('hidden');
-        resetQuizForm();
-      });
-    }
-
-    // --- Import Modal Logic ---
-    const importModal = document.getElementById('importModal');
-    safeOn('btnOpenImport', 'click', () => {
-      if (importModal) importModal.classList.remove('hidden');
-      const startIn = document.getElementById('modalStartNode');
-      const goalIn = document.getElementById('modalGoalNode');
-      if (startIn) startIn.value = startNodeId || 'A';
-      if (goalIn) goalIn.value = goalNodeId || 'G';
-    });
-
-    safeOn('btnCloseModal', 'click', () => { if (importModal) importModal.classList.add('hidden'); });
-    safeOn('btnCancelImport', 'click', () => { if (importModal) importModal.classList.add('hidden'); });
-
-    // Modal subtabs
-    let activeModalTab = 'txt';
-    const modalTabTxt = document.getElementById('modalTabTxt');
-    const modalTabJson = document.getElementById('modalTabJson');
-    const modalTabFile = document.getElementById('modalTabFile');
-    const secModalTxt = document.getElementById('secModalTxt');
-    const secModalJson = document.getElementById('secModalJson');
-    const secModalFile = document.getElementById('secModalFile');
-
-    function switchModalTab(tab) {
-      activeModalTab = tab;
-      [modalTabTxt, modalTabJson, modalTabFile].forEach(btn => {
-        if (btn) btn.className = 'hover:text-slate-200 pb-1';
-      });
-      [secModalTxt, secModalJson, secModalFile].forEach(sec => {
-        if (sec) sec.classList.add('hidden');
-      });
-
-      if (tab === 'txt') {
-        if (modalTabTxt) modalTabTxt.className = 'text-indigo-400 border-b-2 border-indigo-500 pb-1 font-semibold';
-        if (secModalTxt) secModalTxt.classList.remove('hidden');
-      } else if (tab === 'json') {
-        if (modalTabJson) modalTabJson.className = 'text-indigo-400 border-b-2 border-indigo-500 pb-1 font-semibold';
-        if (secModalJson) secModalJson.classList.remove('hidden');
-      } else {
-        if (modalTabFile) modalTabFile.className = 'text-indigo-400 border-b-2 border-indigo-500 pb-1 font-semibold';
-        if (secModalFile) secModalFile.classList.remove('hidden');
-      }
-    }
-
-    if (modalTabTxt) modalTabTxt.addEventListener('click', () => switchModalTab('txt'));
-    if (modalTabJson) modalTabJson.addEventListener('click', () => switchModalTab('json'));
-    if (modalTabFile) modalTabFile.addEventListener('click', () => switchModalTab('file'));
-
-    safeOn('btnLoadExampleBook', 'click', () => {
-      const txt = document.getElementById('txtAdjacency');
-      const sIn = document.getElementById('modalStartNode');
-      const gIn = document.getElementById('modalGoalNode');
-      if (txt) txt.value = `A -> B, C, D\nB -> E, F\nC -> F, G\nE -> H, I\nF -> J`;
-      if (sIn) sIn.value = 'A';
-      if (gIn) gIn.value = 'G';
-    });
-
-    // File Dropzone
-    const dropzone = document.getElementById('dropzone');
-    const fileInput = document.getElementById('fileInput');
-
-    if (dropzone && fileInput) {
-      dropzone.addEventListener('click', () => fileInput.click());
-      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-indigo-500'); });
-      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-indigo-500'));
-      dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropzone.classList.remove('border-indigo-500');
-        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-      });
-      fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) handleFile(e.target.files[0]);
-      });
-    }
-
-    function handleFile(file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target.result;
-        try {
-          JSON.parse(text);
-          const jsonArea = document.getElementById('txtJsonData');
-          if (jsonArea) jsonArea.value = text;
-          switchModalTab('json');
-        } catch (_) {
-          const adjArea = document.getElementById('txtAdjacency');
-          if (adjArea) adjArea.value = text;
-          switchModalTab('txt');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    // Apply Import
-    safeOn('btnApplyImport', 'click', () => {
-      const newNodes = {};
-      const newEdges = [];
-
-      function ensureNode(id) {
-        if (!newNodes[id]) {
-          newNodes[id] = { id, label: id, x: 200, y: 200 };
-        }
-      }
-
-      if (activeModalTab === 'txt') {
-        const txtEl = document.getElementById('txtAdjacency');
-        const text = txtEl ? txtEl.value.trim() : '';
-        const lines = text.split('\n');
-        lines.forEach(line => {
-          const clean = line.trim();
-          if (!clean || clean.startsWith('#')) return;
-          const parts = clean.split(/->|:|,|\s+/).filter(Boolean);
-          if (parts.length >= 2) {
-            const parent = parts[0];
-            ensureNode(parent);
-            for (let i = 1; i < parts.length; i++) {
-              const child = parts[i];
-              ensureNode(child);
-              newEdges.push({ from: parent, to: child });
-            }
-          }
-        });
-      } else if (activeModalTab === 'json') {
-        try {
-          const jsonEl = document.getElementById('txtJsonData');
-          const parsed = JSON.parse(jsonEl ? jsonEl.value.trim() : '{}');
-          if (parsed.edges && Array.isArray(parsed.edges)) {
-            parsed.edges.forEach(ed => {
-              ensureNode(ed.from);
-              ensureNode(ed.to);
-              newEdges.push({ from: ed.from, to: ed.to });
-            });
-          }
-        } catch (err) {
-          console.error(err);
-          return;
-        }
-      }
-
-      if (Object.keys(newNodes).length > 0) {
-        graph.nodes = newNodes;
-        graph.edges = newEdges;
-        const startIn = document.getElementById('modalStartNode');
-        const goalIn = document.getElementById('modalGoalNode');
-        startNodeId = (startIn && startIn.value.trim().toUpperCase()) || Object.keys(newNodes)[0];
-        goalNodeId = (goalIn && goalIn.value.trim().toUpperCase()) || Object.keys(newNodes)[1] || Object.keys(newNodes)[0];
-      }
-
-      if (importModal) importModal.classList.add('hidden');
-      applyAutoLayout();
-    });
-
-    // --- Quiz Mode Logic ---
-    function normalizeListInput(str) {
+    // --- Practice Quiz Logic ---
+    function parseList(str) {
       if (!str) return [];
       return str.replace(/[\[\],]/g, ' ')
         .trim()
@@ -1204,92 +1292,80 @@
         .map(s => s.toUpperCase());
     }
 
-    function resetQuizForm() {
-      const inCS = document.getElementById('inputCS');
-      const inSL = document.getElementById('inputSL');
-      const inNSL = document.getElementById('inputNSL');
-      const inDE = document.getElementById('inputDE');
-      const feedback = document.getElementById('quizFeedback');
-      if (inCS) inCS.value = '';
-      if (inSL) inSL.value = '';
-      if (inNSL) inNSL.value = '';
-      if (inDE) inDE.value = '';
-      if (feedback) {
-        feedback.classList.add('hidden');
-        feedback.innerHTML = '';
-      }
+    const quizForm = document.getElementById('quizForm');
+    if (quizForm) {
+      quizForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const feedback = document.getElementById('quizFeedback');
+        if (currentStepIdx >= traceSteps.length - 1) {
+          if (feedback) {
+            feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-amber-950/70 border border-amber-600/50 text-amber-200';
+            feedback.textContent = 'Goal reached or search complete! Reset or load another tree to practice.';
+            feedback.classList.remove('hidden');
+          }
+          return;
+        }
+
+        const nextStep = traceSteps[currentStepIdx + 1];
+        const inCS = document.getElementById('inputCS');
+        const inSL = document.getElementById('inputSL');
+        const inNSL = document.getElementById('inputNSL');
+        const inDE = document.getElementById('inputDE');
+
+        const uCS = inCS ? inCS.value.trim().toUpperCase() : '';
+        const uSL = parseList(inSL ? inSL.value : '');
+        const uNSL = parseList(inNSL ? inNSL.value : '');
+        const uDE = parseList(inDE ? inDE.value : '');
+
+        const tCS = nextStep.CS.toUpperCase();
+        const tSL = nextStep.SL.map(x => x.toUpperCase());
+        const tNSL = nextStep.NSL.map(x => x.toUpperCase());
+        const tDE = nextStep.DE.map(x => x.toUpperCase());
+
+        const sameArr = (a, b) => a.length === b.length && a.every((val, i) => val === b[i]);
+
+        const csOk = uCS === tCS;
+        const slOk = sameArr(uSL, tSL);
+        const nslOk = sameArr(uNSL, tNSL);
+        const deOk = sameArr(uDE, tDE);
+
+        quizTotal++;
+        const correct = csOk && slOk && nslOk && deOk;
+        if (correct) quizScore++;
+
+        safeText('quizScore', quizScore);
+        safeText('quizTotal', quizTotal);
+
+        if (feedback) {
+          feedback.classList.remove('hidden');
+          if (correct) {
+            feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-emerald-950/70 border border-emerald-500/50 text-emerald-200 space-y-1';
+            feedback.innerHTML = `
+              <div class="font-bold flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4"></i> Correct! Follows Figure 3.14 rules precisely.</div>
+              <div>${nextStep.description}</div>
+            `;
+            currentStepIdx++;
+            updateUI();
+            if (inCS) inCS.value = '';
+            if (inSL) inSL.value = '';
+            if (inNSL) inNSL.value = '';
+            if (inDE) inDE.value = '';
+          } else {
+            feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-rose-950/70 border border-rose-500/50 text-rose-200 space-y-1';
+            let msg = '<div class="font-bold">Check your predictions against Luger’s algorithm:</div><ul class="list-disc pl-4 space-y-0.5">';
+            if (!csOk) msg += `<li><strong>CS:</strong> You gave <code>${uCS || 'none'}</code> (Expected: <code>${tCS}</code>)</li>`;
+            if (!slOk) msg += `<li><strong>SL:</strong> You gave <code>[${uSL.join(' ')}]</code> (Expected: <code>[${tSL.join(' ')}]</code>)</li>`;
+            if (!nslOk) msg += `<li><strong>NSL:</strong> You gave <code>[${uNSL.join(' ')}]</code> (Expected: <code>[${tNSL.join(' ')}]</code>)</li>`;
+            if (!deOk) msg += `<li><strong>DE:</strong> You gave <code>[${uDE.join(' ')}]</code> (Expected: <code>[${tDE.join(' ')}]</code>)</li>`;
+            msg += '</ul>';
+            feedback.innerHTML = msg;
+          }
+          if (window.lucide) lucide.createIcons();
+        }
+      });
     }
 
-    safeOn('quizForm', 'submit', (e) => {
-      e.preventDefault();
-      const feedback = document.getElementById('quizFeedback');
-      if (currentStepIdx >= traceSteps.length - 1) {
-        if (feedback) {
-          feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-amber-950/60 border border-amber-600/50 text-amber-200';
-          feedback.textContent = 'You have reached the final step of the trace! Reset or load another tree to practice again.';
-          feedback.classList.remove('hidden');
-        }
-        return;
-      }
-
-      const nextTargetStep = traceSteps[currentStepIdx + 1];
-      const inCS = document.getElementById('inputCS');
-      const inSL = document.getElementById('inputSL');
-      const inNSL = document.getElementById('inputNSL');
-      const inDE = document.getElementById('inputDE');
-
-      const userCS = inCS ? inCS.value.trim().toUpperCase() : '';
-      const userSL = normalizeListInput(inSL ? inSL.value : '');
-      const userNSL = normalizeListInput(inNSL ? inNSL.value : '');
-      const userDE = normalizeListInput(inDE ? inDE.value : '');
-
-      const targetCS = nextTargetStep.CS.toUpperCase();
-      const targetSL = nextTargetStep.SL.map(s => s.toUpperCase());
-      const targetNSL = nextTargetStep.NSL.map(s => s.toUpperCase());
-      const targetDE = nextTargetStep.DE.map(s => s.toUpperCase());
-
-      const isArrEqual = (a, b) => a.length === b.length && a.every((val, index) => val === b[index]);
-
-      const csCorrect = userCS === targetCS;
-      const slCorrect = isArrEqual(userSL, targetSL);
-      const nslCorrect = isArrEqual(userNSL, targetNSL);
-      const deCorrect = isArrEqual(userDE, targetDE);
-
-      quizAttempts++;
-      const allCorrect = csCorrect && slCorrect && nslCorrect && deCorrect;
-      if (allCorrect) quizScore++;
-
-      const elScore = document.getElementById('quizScore');
-      const elTotal = document.getElementById('quizTotal');
-      if (elScore) elScore.textContent = quizScore;
-      if (elTotal) elTotal.textContent = quizAttempts;
-
-      if (feedback) {
-        feedback.classList.remove('hidden');
-        if (allCorrect) {
-          feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-emerald-950/70 border border-emerald-500/50 text-emerald-200 space-y-1';
-          feedback.innerHTML = `
-            <div class="font-bold flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4"></i> Correct! Exactly matches Figure 3.14 rules.</div>
-            <div>${nextTargetStep.description}</div>
-          `;
-          currentStepIdx++;
-          updateUI();
-          resetQuizForm();
-        } else {
-          feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-rose-950/70 border border-rose-500/50 text-rose-200 space-y-1.5';
-          let detailHtml = '<div class="font-bold">Check your predictions against Luger’s rules:</div><ul class="list-disc pl-4 space-y-0.5">';
-          if (!csCorrect) detailHtml += `<li><strong>CS:</strong> You wrote <code>${userCS || 'none'}</code> (Expected: <code>${targetCS}</code>)</li>`;
-          if (!slCorrect) detailHtml += `<li><strong>SL:</strong> You wrote <code>[${userSL.join(' ')}]</code> (Expected: <code>[${targetSL.join(' ')}]</code>)</li>`;
-          if (!nslCorrect) detailHtml += `<li><strong>NSL:</strong> You wrote <code>[${userNSL.join(' ')}]</code> (Expected: <code>[${targetNSL.join(' ')}]</code>)</li>`;
-          if (!deCorrect) detailHtml += `<li><strong>DE:</strong> You wrote <code>[${userDE.join(' ')}]</code> (Expected: <code>[${targetDE.join(' ')}]</code>)</li>`;
-          detailHtml += '</ul><div class="pt-1 text-[11px] text-rose-300">Remember: When a dead end is encountered, CS is prepended to DE, popped from SL & NSL, and CS is reassigned to car(NSL).</div>';
-          feedback.innerHTML = detailHtml;
-        }
-      }
-      if (window.lucide) lucide.createIcons();
-    });
-
-    safeOn('btnRevealStep', 'click', () => {
+    bindClick('btnRevealStep', () => {
       if (currentStepIdx < traceSteps.length - 1) {
         const nextStep = traceSteps[currentStepIdx + 1];
         const inCS = document.getElementById('inputCS');
@@ -1303,10 +1379,158 @@
       }
     });
 
-    // --- Window Load & Initial Setup ---
+    // --- Import Modal Controller ---
+    const importModal = document.getElementById('importModal');
+    bindClick('btnOpenImportModal', () => {
+      if (importModal) importModal.classList.remove('hidden');
+      const sIn = document.getElementById('modalStartNode');
+      const gIn = document.getElementById('modalGoalNode');
+      if (sIn) sIn.value = startNodeId;
+      if (gIn) gIn.value = goalNodeId;
+    });
+
+    bindClick('btnCloseModal', () => { if (importModal) importModal.classList.add('hidden'); });
+    bindClick('btnCancelModal', () => { if (importModal) importModal.classList.add('hidden'); });
+
+    // Subtabs inside modal
+    let activeImportTab = 'txt';
+    const tabTxt = document.getElementById('tabImportTxt');
+    const tabJson = document.getElementById('tabImportJson');
+    const tabFile = document.getElementById('tabImportFile');
+    const secTxt = document.getElementById('secImportTxt');
+    const secJson = document.getElementById('secImportJson');
+    const secFile = document.getElementById('secImportFile');
+
+    function setImportSubtab(t) {
+      activeImportTab = t;
+      [tabTxt, tabJson, tabFile].forEach(b => {
+        if (b) b.className = 'text-slate-400 hover:text-slate-200 pb-1';
+      });
+      [secTxt, secJson, secFile].forEach(s => {
+        if (s) s.classList.add('hidden');
+      });
+
+      if (t === 'txt') {
+        if (tabTxt) tabTxt.className = 'text-indigo-400 border-b-2 border-indigo-500 pb-1 font-semibold';
+        if (secTxt) secTxt.classList.remove('hidden');
+      } else if (t === 'json') {
+        if (tabJson) tabJson.className = 'text-indigo-400 border-b-2 border-indigo-500 pb-1 font-semibold';
+        if (secJson) secJson.classList.remove('hidden');
+      } else {
+        if (tabFile) tabFile.className = 'text-indigo-400 border-b-2 border-indigo-500 pb-1 font-semibold';
+        if (secFile) secFile.classList.remove('hidden');
+      }
+    }
+
+    if (tabTxt) tabTxt.addEventListener('click', () => setImportSubtab('txt'));
+    if (tabJson) tabJson.addEventListener('click', () => setImportSubtab('json'));
+    if (tabFile) tabFile.addEventListener('click', () => setImportSubtab('file'));
+
+    bindClick('btnLoadExampleText', () => {
+      const area = document.getElementById('txtAdjacency');
+      if (area) area.value = `A -> B, C, D\nB -> E, F\nC -> F, G\nE -> H, I\nF -> J`;
+    });
+
+    // File Drag & Drop
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('click', () => fileInput.click());
+      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-indigo-500'); });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-indigo-500'));
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('border-indigo-500');
+        if (e.dataTransfer.files.length) processImportFile(e.dataTransfer.files[0]);
+      });
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) processImportFile(e.target.files[0]);
+      });
+    }
+
+    function processImportFile(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target.result;
+        try {
+          JSON.parse(content);
+          const jArea = document.getElementById('txtJsonData');
+          if (jArea) jArea.value = content;
+          setImportSubtab('json');
+        } catch (_) {
+          const tArea = document.getElementById('txtAdjacency');
+          if (tArea) tArea.value = content;
+          setImportSubtab('txt');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Apply Import Button
+    bindClick('btnApplyImport', () => {
+      const newNodes = {};
+      const newEdges = [];
+
+      function getOrCreateNode(id) {
+        if (!newNodes[id]) {
+          newNodes[id] = { id, label: id, x: 200, y: 200 };
+        }
+      }
+
+      if (activeImportTab === 'txt') {
+        const area = document.getElementById('txtAdjacency');
+        const text = area ? area.value.trim() : '';
+        const lines = text.split('\n');
+        lines.forEach(line => {
+          const l = line.trim();
+          if (!l || l.startsWith('#')) return;
+          const parts = l.split(/->|:|,|\s+/).filter(Boolean);
+          if (parts.length >= 2) {
+            const parent = parts[0];
+            getOrCreateNode(parent);
+            for (let i = 1; i < parts.length; i++) {
+              const child = parts[i];
+              getOrCreateNode(child);
+              newEdges.push({ from: parent, to: child });
+            }
+          }
+        });
+      } else if (activeImportTab === 'json') {
+        const area = document.getElementById('txtJsonData');
+        try {
+          const data = JSON.parse(area ? area.value.trim() : '{}');
+          if (data.edges && Array.isArray(data.edges)) {
+            data.edges.forEach(ed => {
+              getOrCreateNode(ed.from);
+              getOrCreateNode(ed.to);
+              newEdges.push({ from: ed.from, to: ed.to });
+            });
+          }
+        } catch (err) {
+          console.error(err);
+          return;
+        }
+      }
+
+      if (Object.keys(newNodes).length > 0) {
+        graph.nodes = newNodes;
+        graph.edges = newEdges;
+
+        const sIn = document.getElementById('modalStartNode');
+        const gIn = document.getElementById('modalGoalNode');
+        startNodeId = (sIn && sIn.value.trim().toUpperCase()) || Object.keys(newNodes)[0];
+        goalNodeId = (gIn && gIn.value.trim().toUpperCase()) || Object.keys(newNodes)[1] || Object.keys(newNodes)[0];
+      }
+
+      if (importModal) importModal.classList.add('hidden');
+      applyAutoLayout();
+    });
+
+    // --- Window Onload ---
     window.onload = function() {
       if (window.lucide) lucide.createIcons();
-      loadPreset('figure314');
+      loadPresetData(PRESET_FIG_314);
     };
   </script>
 </body>
