@@ -3,1582 +3,1252 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Luger Backtracking Search Lab & Practice</title>
+  <title>Luger Backtracking Search Visualizer & Practice Lab</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Phosphor Icons for modern aesthetic UI -->
-  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#f0fdf4',
-              100: '#dcfce7',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d'
-            },
-            accent: {
-              500: '#f59e0b',
-              600: '#d97706'
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    /* Custom styling for nodes, connection lines and canvas */
-    .canvas-grid {
-      background-size: 24px 24px;
-      background-image: 
-        radial-gradient(circle, #cbd5e1 1px, transparent 1px);
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
     }
-    .dark .canvas-grid {
-      background-image: 
-        radial-gradient(circle, #334155 1px, transparent 1px);
+    .font-mono-code {
+      font-family: 'Fira Code', monospace;
     }
-    .custom-scrollbar::-webkit-scrollbar {
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background-color: #cbd5e1;
-      border-radius: 4px;
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
     }
-    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-      background-color: #475569;
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+    .node-pulse {
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
     }
     @keyframes pulse-ring {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.2); opacity: 0.3; }
-      100% { transform: scale(0.95); opacity: 0.8; }
-    }
-    .pulse-glow {
-      animation: pulse-ring 2s infinite ease-in-out;
+      0% { r: 24; opacity: 0.8; }
+      50% { r: 32; opacity: 0; }
+      100% { r: 24; opacity: 0; }
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans antialiased overflow-hidden select-none">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
 
-  <!-- TOP APP BAR -->
-  <header class="h-14 border-b border-slate-800 bg-slate-950/80 backdrop-blur px-4 flex items-center justify-between z-20 shrink-0">
-    <div class="flex items-center space-x-3">
-      <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-lg shadow-inner">
-        <i class="ph ph-tree-structure"></i>
+  <!-- Top Navigation Header -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-md">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+        <i data-lucide="git-fork" class="w-5 h-5 text-white"></i>
       </div>
       <div>
-        <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-          Luger Backtracking Simulator &amp; Practice
-          <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">CS • SL • NSL • DE</span>
+        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+          State Space Backtracking
+          <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium">Luger Fig 3.14</span>
         </h1>
+        <p class="text-xs text-slate-400">Formal AI search with CS, SL, NSL & DE tracking</p>
       </div>
     </div>
 
-    <!-- Navigation / Mode Switches -->
-    <div class="flex items-center gap-2">
-      <div class="bg-slate-800/80 p-1 rounded-xl flex items-center border border-slate-700/60 text-xs">
-        <button id="mode-explore-btn" onclick="setAppMode('explore')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm">
-          <i class="ph ph-play-circle text-base"></i> Visual Simulation
-        </button>
-        <button id="mode-quiz-btn" onclick="setAppMode('quiz')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-300 hover:text-white">
-          <i class="ph ph-graduation-cap text-base"></i> Interactive Quiz
-        </button>
+    <!-- Mode Tabs and Action Presets -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <!-- Presets -->
+      <div class="flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700/60 text-xs">
+        <span class="text-slate-400 px-2 font-medium">Presets:</span>
+        <button id="btnPresetFig314" class="px-2.5 py-1 rounded bg-indigo-600 text-white font-medium hover:bg-indigo-500 transition shadow-sm">Figure 3.14</button>
+        <button id="btnPresetSimple" class="px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Binary Tree</button>
+        <button id="btnPresetDeadEnd" class="px-2.5 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Multi Dead-End</button>
       </div>
 
-      <button onclick="toggleAlgorithmModal(true)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5" title="View Luger Algorithm Pseudocode">
-        <i class="ph ph-book-open-text text-base text-sky-400"></i> Rules &amp; Logic
-      </button>
-
-      <button onclick="loadFigure314Preset()" class="px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs flex items-center gap-1.5 font-medium" title="Reset to textbook Figure 3.14">
-        <i class="ph ph-arrow-counter-clockwise text-base"></i> Fig 3.14 Preset
-      </button>
+      <!-- Mode Selector -->
+      <div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700 text-xs">
+        <button id="tabExplore" class="px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition">
+          <i data-lucide="play-circle" class="w-3.5 h-3.5"></i> Visualizer & Trace
+        </button>
+        <button id="tabPractice" class="px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition">
+          <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i> Quiz Practice Mode
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- MAIN TWO-COLUMN WORKSPACE -->
-  <main class="flex-1 flex overflow-hidden relative">
-
-    <!-- LEFT PANEL: CANVAS & GRAPH BUILDER -->
-    <section class="flex-1 flex flex-col border-r border-slate-800 bg-slate-950 relative overflow-hidden">
+  <!-- Main Container -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
+    
+    <!-- LEFT 7 COLS: Canvas & Editor Tools -->
+    <div class="lg:col-span-7 flex flex-col border-r border-slate-800 h-[calc(100vh-60px)] relative bg-slate-950">
       
       <!-- Canvas Toolbar -->
-      <div class="h-11 bg-slate-900/90 border-b border-slate-800/80 px-3 flex items-center justify-between z-10 shrink-0">
-        <div class="flex items-center space-x-1.5 text-xs">
-          <!-- Canvas Tools -->
-          <div class="flex items-center bg-slate-800/90 rounded-lg p-0.5 border border-slate-700/70">
-            <button id="tool-select" onclick="setCanvasTool('select')" class="px-2.5 py-1 rounded text-white bg-slate-700 flex items-center gap-1" title="Select / Move Nodes">
-              <i class="ph ph-cursor"></i> Move
-            </button>
-            <button id="tool-node" onclick="setCanvasTool('node')" class="px-2.5 py-1 rounded text-slate-400 hover:text-white flex items-center gap-1" title="Click on canvas to add Node">
-              <i class="ph ph-circle"></i> +Node
-            </button>
-            <button id="tool-edge" onclick="setCanvasTool('edge')" class="px-2.5 py-1 rounded text-slate-400 hover:text-white flex items-center gap-1" title="Drag between nodes to create directed edge">
-              <i class="ph ph-arrow-elbow-down-right"></i> +Edge
-            </button>
-            <button id="tool-delete" onclick="setCanvasTool('delete')" class="px-2.5 py-1 rounded text-slate-400 hover:text-rose-400 flex items-center gap-1" title="Click node or edge to delete">
-              <i class="ph ph-trash"></i> Delete
-            </button>
-          </div>
-
+      <div class="p-2.5 bg-slate-900/60 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <!-- Editor tools -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button id="toolSelect" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-indigo-600 text-white border border-indigo-500/50 hover:bg-indigo-500 transition" title="Drag and inspect nodes">
+            <i data-lucide="mouse-pointer" class="w-3.5 h-3.5"></i> Drag / Move
+          </button>
+          <button id="toolAddNode" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition" title="Click on canvas to add a new node">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> + Node
+          </button>
+          <button id="toolAddEdge" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700 transition" title="Click parent then child to add directed edge">
+            <i data-lucide="arrow-down-right" class="w-3.5 h-3.5"></i> + Edge
+          </button>
+          <button id="toolDelete" class="px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-rose-400 border border-slate-700 hover:bg-rose-950/40 transition" title="Click a node or edge to remove">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+          </button>
           <div class="h-4 w-px bg-slate-700 mx-1"></div>
-
-          <!-- Start and Target Pickers -->
-          <div class="flex items-center gap-1">
-            <span class="text-slate-400 text-[11px]">Start:</span>
-            <select id="start-node-select" onchange="onStartGoalChanged()" class="bg-slate-800 border border-slate-700 text-emerald-400 font-bold rounded px-1.5 py-0.5 text-xs focus:ring-1 focus:ring-emerald-500 outline-none">
-            </select>
-          </div>
-
-          <div class="flex items-center gap-1 ml-2">
-            <span class="text-slate-400 text-[11px]">Goal:</span>
-            <select id="goal-node-select" onchange="onStartGoalChanged()" class="bg-slate-800 border border-slate-700 text-rose-400 font-bold rounded px-1.5 py-0.5 text-xs focus:ring-1 focus:ring-rose-500 outline-none">
-            </select>
-          </div>
+          <button id="btnClearGraph" class="px-2 py-1.5 rounded text-slate-400 hover:text-slate-200 hover:bg-slate-800" title="Clear all nodes">
+            Clear
+          </button>
         </div>
 
-        <!-- Canvas Quick Actions -->
-        <div class="flex items-center space-x-1.5 text-xs">
-          <button onclick="reorderChildrenModal()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700" title="Inspect/reorder left-to-right branch exploration">
-            <i class="ph ph-sort-ascending"></i> Branch Order
+        <!-- Start & Goal Selectors -->
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1">
+            <span class="text-emerald-400 font-semibold text-[11px]">Start:</span>
+            <select id="selectStartNode" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"></select>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="text-amber-400 font-semibold text-[11px]">Goal:</span>
+            <select id="selectGoalNode" class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-200 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none"></select>
+          </div>
+          <button id="btnRecompute" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" title="Recompute algorithm path">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
           </button>
-          <button onclick="clearCanvasPrompt()" class="px-2 py-1 rounded bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-400 text-[11px] border border-slate-700" title="Clear canvas">
-            <i class="ph ph-eraser"></i> Clear
-          </button>
-          <button onclick="exportGraphJson()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700" title="Export as JSON">
-            <i class="ph ph-export"></i>
-          </button>
-          <button onclick="document.getElementById('file-importer').click()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700" title="Import JSON">
-            <i class="ph ph-download-simple"></i>
-          </button>
-          <input type="file" id="file-importer" accept=".json" class="hidden" onchange="importGraphJson(event)">
         </div>
       </div>
 
-      <!-- Interactive SVG / Canvas Container -->
-      <div id="canvas-container" class="flex-1 relative canvas-grid overflow-hidden cursor-default select-none">
-        <svg id="graph-svg" class="w-full h-full absolute inset-0 pointer-events-auto">
+      <!-- Graph Canvas Viewport -->
+      <div id="canvasContainer" class="flex-1 relative overflow-hidden select-none bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px]">
+        <svg id="graphSvg" class="w-full h-full cursor-crosshair">
           <defs>
-            <!-- Arrow markers -->
-            <marker id="arrow-default" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+            <!-- Normal arrow marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#64748b" />
             </marker>
-            <marker id="arrow-active" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 1 L 9 5 L 0 9 z" fill="#22c55e" />
+            <!-- Active path arrow marker -->
+            <marker id="arrow-active" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#38bdf8" />
             </marker>
-            <marker id="arrow-backtrack" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 2 L 7 5 L 0 8 z" fill="#ef4444" stroke="#ef4444" stroke-dasharray="2,2" />
+            <!-- Backtracking arrow marker (dashed red) -->
+            <marker id="arrow-backtrack" viewBox="0 0 10 10" refX="24" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#f43f5e" />
             </marker>
           </defs>
-          <g id="edges-layer"></g>
-          <g id="annotation-layer"></g>
-          <g id="nodes-layer"></g>
-          <line id="drag-line" class="hidden" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4" x1="0" y1="0" x2="0" y2="0" />
+          <g id="layerEdges"></g>
+          <g id="layerBacktrackOverlay"></g>
+          <g id="layerNodes"></g>
         </svg>
 
-        <!-- Canvas Legend Overlay -->
-        <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-sm border border-slate-800 p-2.5 rounded-xl shadow-lg pointer-events-none text-[11px] space-y-1.5 max-w-xs">
-          <div class="font-semibold text-slate-300 flex items-center justify-between pb-1 border-b border-slate-800">
-            <span>Visual State Key</span>
-            <span class="text-[10px] text-slate-500">Luger Convention</span>
+        <!-- Canvas Legend & Instructions Overlay -->
+        <div class="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur border border-slate-800 p-2.5 rounded-lg shadow-lg text-[11px] space-y-1.5 pointer-events-none">
+          <div class="font-semibold text-slate-300 flex items-center gap-1.5 pb-1 border-b border-slate-800">
+            <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-400"></i> Visual State Legend
           </div>
-          <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-slate-400">
-            <div class="flex items-center gap-1.5">
-              <span class="w-3.5 h-3.5 rounded-full bg-amber-500 border border-amber-300 ring-2 ring-amber-500/40 shrink-0"></span>
-              <span><strong>CS</strong> (Current)</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-3.5 h-3.5 rounded-full bg-emerald-600 border border-emerald-400 shrink-0"></span>
-              <span><strong>SL</strong> (Active Path)</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-3.5 h-3.5 rounded-full bg-sky-950 border border-sky-400 shrink-0"></span>
-              <span><strong>NSL</strong> (Candidates)</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-3.5 h-3.5 rounded-full bg-rose-950 border border-rose-500/80 shrink-0"></span>
-              <span><strong>DE</strong> (Dead Ends)</span>
-            </div>
-          </div>
-          <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-800/80">
-            Numbers (1, 2, 3...) indicate visit order sequence.
+          <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30"></span> <span>Start State</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-500/30"></span> <span>Goal Node</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500 ring-2 ring-indigo-400"></span> <span>Current State (CS)</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> <span>State List (SL path)</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500/60 border border-rose-400"></span> <span>Dead End (DE)</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full border border-dashed border-indigo-400"></span> <span>Frontier (NSL)</span></div>
           </div>
         </div>
 
-        <!-- Canvas Interactive Status Tip -->
-        <div id="canvas-help-bubble" class="absolute top-3 left-3 px-3 py-1.5 bg-slate-800/95 border border-slate-700/80 text-slate-300 text-xs rounded-lg shadow-md flex items-center gap-2">
-          <i class="ph ph-info text-sky-400"></i>
-          <span id="canvas-help-text">Click anywhere to create a new node, or click Fig 3.14 Preset above.</span>
+        <!-- Help tooltip badge -->
+        <div id="canvasStatusTip" class="absolute top-3 left-3 bg-indigo-950/80 border border-indigo-500/40 text-indigo-200 px-3 py-1.5 rounded-md text-xs shadow-md backdrop-blur">
+          Tip: Left-to-right node layout dictates expansion order into NSL.
         </div>
       </div>
 
-      <!-- Playback Controls Bar (For Explore Mode) -->
-      <div id="sim-controls-bar" class="h-14 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between shrink-0">
-        <div class="flex items-center space-x-2">
-          <button id="btn-step-start" onclick="stepToStart()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700" title="First Iteration (0)">
-            <i class="ph ph-skip-back text-sm"></i>
+      <!-- Execution / Playback Control Bar -->
+      <div class="p-3 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-1.5">
+          <button id="btnFirst" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" title="First Iteration (0)">
+            <i data-lucide="chevrons-left" class="w-4 h-4"></i>
           </button>
-          <button id="btn-step-prev" onclick="stepBackward()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700" title="Previous Step">
-            <i class="ph ph-caret-left text-sm"></i>
+          <button id="btnPrev" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" title="Previous Step">
+            <i data-lucide="chevron-left" class="w-4 h-4"></i>
           </button>
-          <button id="btn-play-pause" onclick="togglePlayPause()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5 shadow-md">
-            <i id="play-icon" class="ph ph-play-fill text-sm"></i>
-            <span id="play-text" class="text-xs">Play</span>
+          <button id="btnPlay" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium flex items-center gap-1.5 shadow-md shadow-indigo-600/30 transition">
+            <i data-lucide="play" class="w-4 h-4 fill-white" id="playIcon"></i> <span id="playText">Play</span>
           </button>
-          <button id="btn-step-next" onclick="stepForward()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700" title="Next Step">
-            <i class="ph ph-caret-right text-sm"></i>
+          <button id="btnNext" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" title="Next Step">
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
           </button>
-          <button id="btn-step-end" onclick="stepToEnd()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700" title="Final Result">
-            <i class="ph ph-skip-forward text-sm"></i>
+          <button id="btnLast" class="p-2 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700" title="Final Step">
+            <i data-lucide="chevrons-right" class="w-4 h-4"></i>
           </button>
-          <div class="h-5 w-px bg-slate-800 mx-1"></div>
-          <span class="text-xs font-mono text-slate-400">
-            Iter: <strong id="current-iter-label" class="text-white text-sm">0</strong>/<span id="total-iters-label">0</span>
-          </span>
+          <button id="btnReset" class="p-2 rounded bg-slate-800 hover:bg-rose-900/40 text-slate-300 hover:text-rose-300 border border-slate-700" title="Reset Trace">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+          </button>
         </div>
 
-        <!-- Simulation Speed -->
+        <!-- Iteration Indicator -->
         <div class="flex items-center gap-3">
           <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-400">Speed:</span>
-            <input id="speed-slider" type="range" min="300" max="2200" step="100" value="1000" class="w-24 accent-emerald-500 bg-slate-700 rounded-lg cursor-pointer">
-            <span id="speed-val" class="text-xs font-mono text-slate-400 w-8">1.0s</span>
+            <span class="text-slate-400">Speed:</span>
+            <input id="sliderSpeed" type="range" min="300" max="2500" value="1200" step="100" class="w-20 accent-indigo-500 cursor-pointer">
           </div>
-          <button onclick="recalculateBacktrack()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs border border-slate-700 flex items-center gap-1">
-            <i class="ph ph-arrows-clockwise text-xs"></i> Recompute
-          </button>
+          <div class="bg-slate-800 px-3 py-1.5 rounded-md border border-slate-700 flex items-center gap-2">
+            <span class="text-slate-400">Iteration:</span>
+            <span id="stepCounter" class="font-mono text-indigo-400 font-bold text-sm">0 / 8</span>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- RIGHT PANEL: LUGER STATE MONITOR & TRACE / QUIZ -->
-    <section class="w-[480px] flex flex-col bg-slate-900 shrink-0 border-l border-slate-800 overflow-hidden">
+    <!-- RIGHT 5 COLS: Trace State Table, Algorithm Logic & Practice Quiz -->
+    <div class="lg:col-span-5 flex flex-col h-[calc(100vh-60px)] bg-slate-900/70 overflow-hidden">
       
-      <!-- MODE A: EXPLORE / LIVE STATE VIEWER -->
-      <div id="view-explore" class="flex-1 flex flex-col overflow-hidden">
+      <!-- Current State Badge Cards -->
+      <div class="p-3 bg-slate-900 border-b border-slate-800 grid grid-cols-4 gap-2 text-center text-xs">
+        <div class="bg-slate-950/80 p-2 rounded border border-indigo-500/30">
+          <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">CS (Current)</span>
+          <span id="cardCS" class="font-mono text-base font-bold text-indigo-400">A</span>
+        </div>
+        <div class="bg-slate-950/80 p-2 rounded border border-sky-500/30">
+          <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">SL (Path)</span>
+          <span id="cardSL" class="font-mono text-xs font-semibold text-sky-300 truncate block">[A]</span>
+        </div>
+        <div class="bg-slate-950/80 p-2 rounded border border-violet-500/30">
+          <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">NSL (Queue/Stack)</span>
+          <span id="cardNSL" class="font-mono text-xs font-semibold text-violet-300 truncate block">[A]</span>
+        </div>
+        <div class="bg-slate-950/80 p-2 rounded border border-rose-500/30">
+          <span class="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">DE (Dead Ends)</span>
+          <span id="cardDE" class="font-mono text-xs font-semibold text-rose-300 truncate block">[ ]</span>
+        </div>
+      </div>
+
+      <!-- Action Commentary Banner -->
+      <div id="actionBanner" class="px-4 py-2 bg-indigo-950/40 border-b border-indigo-900/40 text-xs text-indigo-200 flex items-start gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+        <div id="actionExplanation" class="leading-relaxed">
+          Initialize search with start node A. CS = A, SL = [A], NSL = [A], DE = [].
+        </div>
+      </div>
+
+      <!-- EXPLORE VIEW: Trace Table & Formal Algorithm -->
+      <div id="viewExplore" class="flex-1 flex flex-col overflow-hidden">
         
-        <!-- Live State Variable Badges -->
-        <div class="p-3.5 bg-slate-950 border-b border-slate-800 space-y-2.5">
-          <div class="flex items-center justify-between">
-            <h2 class="text-xs font-semibold tracking-wider uppercase text-slate-400 flex items-center gap-1.5">
-              <i class="ph ph-cpu text-emerald-400"></i> Backtracking State Register
-            </h2>
-            <span id="status-badge" class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">Ready</span>
-          </div>
-
-          <!-- Variable Cards Grid -->
-          <div class="grid grid-cols-2 gap-2">
-            <!-- CS Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">CS (Current State)</span>
-                <span id="badge-cs" class="text-lg font-black text-amber-400 font-mono tracking-wide">A</span>
-              </div>
-              <div class="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-mono font-bold text-xs">
-                CS
-              </div>
-            </div>
-
-            <!-- SL Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">SL (State List / Path)</span>
-                <span id="badge-sl" class="text-sm font-bold text-emerald-400 font-mono tracking-wide truncate max-w-[140px] block">[A]</span>
-              </div>
-              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-xs">
-                SL
-              </div>
-            </div>
-
-            <!-- NSL Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">NSL (New State List)</span>
-                <span id="badge-nsl" class="text-sm font-bold text-sky-400 font-mono tracking-wide truncate max-w-[140px] block">[A]</span>
-              </div>
-              <div class="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-mono font-bold text-xs">
-                NSL
-              </div>
-            </div>
-
-            <!-- DE Card -->
-            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
-              <div>
-                <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">DE (Dead Ends)</span>
-                <span id="badge-de" class="text-sm font-bold text-rose-400 font-mono tracking-wide truncate max-w-[140px] block">[ ]</span>
-              </div>
-              <div class="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-mono font-bold text-xs">
-                DE
-              </div>
-            </div>
-          </div>
-
-          <!-- Algorithm Decision / Log Box -->
-          <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2 text-xs flex items-start gap-2">
-            <i class="ph ph-chat-circle-dots text-emerald-400 text-sm mt-0.5 shrink-0"></i>
-            <div class="flex-1">
-              <span class="text-slate-400 font-semibold block text-[11px]">Step Explanation:</span>
-              <p id="step-explanation" class="text-slate-200 text-xs leading-relaxed mt-0.5">
-                Initial state: Start node A added to SL and NSL. CS is A.
-              </p>
-            </div>
+        <!-- Luger's Algorithm Definition Dropdown Accordion -->
+        <div class="border-b border-slate-800 bg-slate-950/50">
+          <button id="toggleAlgo" class="w-full px-4 py-2 flex items-center justify-between text-xs text-slate-300 font-semibold hover:bg-slate-800/40">
+            <span class="flex items-center gap-1.5"><i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400"></i> Luger's Formal Backtracking Rules</span>
+            <i data-lucide="chevron-down" id="algoChevron" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+          </button>
+          <div id="algoContent" class="px-4 py-2 text-[11px] font-mono-code bg-slate-950 text-slate-300 space-y-1 border-t border-slate-800/60 max-h-48 overflow-y-auto">
+            <div id="codeLine1" class="px-1 py-0.5 rounded transition">1. Set SL = [Start], NSL = [Start], DE = [ ], CS = Start;</div>
+            <div id="codeLine2" class="px-1 py-0.5 rounded transition">2. WHILE NSL ≠ [ ] DO:</div>
+            <div id="codeLine3" class="px-1 py-0.5 rounded transition pl-4">IF CS = Goal THEN RETURN SL (success);</div>
+            <div id="codeLine4" class="px-1 py-0.5 rounded transition pl-4">IF CS has unvisited children (not in SL or DE) THEN:</div>
+            <div id="codeLine5" class="px-1 py-0.5 rounded transition pl-8">add children to head of NSL; CS = car(NSL); add CS to SL;</div>
+            <div id="codeLine6" class="px-1 py-0.5 rounded transition pl-4">ELSE (Dead-End! CS has no children):</div>
+            <div id="codeLine7" class="px-1 py-0.5 rounded transition pl-8">WHILE SL ≠ [ ] and CS = car(SL) DO:</div>
+            <div id="codeLine8" class="px-1 py-0.5 rounded transition pl-12">add CS to DE; remove CS from SL; remove CS from NSL;</div>
+            <div id="codeLine9" class="px-1 py-0.5 rounded transition pl-12">CS = car(NSL); add CS to SL;</div>
+            <div id="codeLine10" class="px-1 py-0.5 rounded transition">3. RETURN failure (No path to goal);</div>
           </div>
         </div>
 
-        <!-- Full Execution Trace Table -->
-        <div class="flex-1 flex flex-col overflow-hidden bg-slate-900">
-          <div class="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Trace Table (Figure 3.14 Format)</span>
-            <span class="text-[11px] text-slate-400">Click any row to jump</span>
+        <!-- Textbook Trace Table (Exact Figure 3.14 format) -->
+        <div class="flex-1 overflow-auto p-3">
+          <div class="text-xs font-semibold text-slate-300 mb-2 flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i data-lucide="table" class="w-3.5 h-3.5 text-indigo-400"></i> State Space Trace Table</span>
+            <span class="text-[11px] text-slate-500 font-normal">Click any row to jump to step</span>
           </div>
 
-          <div class="flex-1 overflow-auto custom-scrollbar">
-            <table class="w-full text-left text-xs font-mono border-collapse">
-              <thead class="bg-slate-950/80 sticky top-0 border-b border-slate-800 text-[11px] text-slate-400 uppercase tracking-wider z-10">
+          <div class="border border-slate-800 rounded-lg overflow-hidden shadow-inner bg-slate-950/60">
+            <table class="w-full text-left text-xs font-mono-code border-collapse">
+              <thead class="bg-slate-800/90 text-slate-300 uppercase tracking-wider text-[10px] sticky top-0 border-b border-slate-700">
                 <tr>
-                  <th class="py-2 px-2 text-center w-12">Iter</th>
-                  <th class="py-2 px-2 text-center w-12">CS</th>
-                  <th class="py-2 px-2">SL</th>
-                  <th class="py-2 px-2">NSL</th>
-                  <th class="py-2 px-2">DE</th>
+                  <th class="py-2 px-2.5 text-center w-12">Iter</th>
+                  <th class="py-2 px-2.5 text-center w-12 text-indigo-300">CS</th>
+                  <th class="py-2 px-3 text-sky-300">SL</th>
+                  <th class="py-2 px-3 text-violet-300">NSL</th>
+                  <th class="py-2 px-3 text-rose-300">DE</th>
                 </tr>
               </thead>
-              <tbody id="trace-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+              <tbody id="traceTableBody" class="divide-y divide-slate-800/60 text-slate-300 text-xs">
                 <!-- Dynamically generated rows -->
               </tbody>
             </table>
           </div>
         </div>
-
       </div>
 
-      <!-- MODE B: INTERACTIVE PRACTICE / QUIZ -->
-      <div id="view-quiz" class="flex-1 flex flex-col hidden bg-slate-950 overflow-hidden">
-        <div class="p-4 border-b border-slate-800 bg-slate-900 flex items-center justify-between">
-          <div>
-            <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-              <i class="ph ph-chalkboard-teacher text-base"></i> Backtracking Practice Arena
-            </h2>
-            <p class="text-[11px] text-slate-400 mt-0.5">Predict the next state of CS, SL, and DE before stepping forward!</p>
+      <!-- PRACTICE / QUIZ MODE VIEW -->
+      <div id="viewPractice" class="hidden flex-1 flex flex-col p-4 overflow-y-auto">
+        <div class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4 mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-sm text-indigo-200 flex items-center gap-2">
+              <i data-lucide="brain-circuit" class="w-4 h-4 text-indigo-400"></i> Predict the Next Iteration
+            </h3>
+            <div class="text-xs font-medium px-2 py-0.5 rounded bg-indigo-900/60 text-indigo-300 border border-indigo-700/50">
+              Score: <span id="quizScore" class="font-bold text-white">0</span> / <span id="quizTotal" class="font-bold text-white">0</span>
+            </div>
           </div>
-          <div class="text-right">
-            <span class="text-xs font-mono font-bold text-amber-400" id="quiz-score-badge">Score: 0 / 0</span>
-          </div>
+          <p class="text-xs text-slate-300 mb-3">
+            Based on current iteration <span id="quizCurrentIter" class="font-bold text-indigo-400 font-mono">0</span>, test your knowledge of Luger's algorithm by predicting the data structures after the next expansion or backtrack.
+          </p>
+
+          <!-- Interactive Quiz Form -->
+          <form id="quizForm" class="space-y-3.5 text-xs">
+            <!-- Predict CS -->
+            <div>
+              <label class="block text-slate-400 mb-1 font-semibold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-indigo-400"></span> 1. Next Current State (CS):
+              </label>
+              <div class="flex gap-2">
+                <input id="inputCS" type="text" placeholder="e.g. B" class="w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase text-center focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+                <div id="hintCS" class="text-[11px] text-slate-400 italic self-center">Child to visit or next state popped from NSL</div>
+              </div>
+            </div>
+
+            <!-- Predict SL -->
+            <div>
+              <label class="block text-slate-400 mb-1 font-semibold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span> 2. Next State List (SL) - formatted as [B A]:
+              </label>
+              <input id="inputSL" type="text" placeholder="e.g. [B A]" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:ring-2 focus:ring-sky-500 focus:outline-none" required>
+            </div>
+
+            <!-- Predict NSL -->
+            <div>
+              <label class="block text-slate-400 mb-1 font-semibold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-violet-400"></span> 3. Next New State List (NSL):
+              </label>
+              <input id="inputNSL" type="text" placeholder="e.g. [B C D A]" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:ring-2 focus:ring-violet-500 focus:outline-none" required>
+            </div>
+
+            <!-- Predict DE -->
+            <div>
+              <label class="block text-slate-400 mb-1 font-semibold flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span> 4. Dead Ends List (DE):
+              </label>
+              <input id="inputDE" type="text" placeholder="e.g. [ ] or [H]" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white font-mono uppercase focus:ring-2 focus:ring-rose-500 focus:outline-none" required>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+              <button type="submit" class="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/30 transition">
+                <i data-lucide="check-circle-2" class="w-4 h-4"></i> Check My Answer
+              </button>
+              <button type="button" id="btnRevealStep" class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium border border-slate-700 transition">
+                Reveal Step
+              </button>
+            </div>
+          </form>
+
+          <!-- Quiz Feedback Banner -->
+          <div id="quizFeedback" class="hidden mt-3 p-3 rounded-lg text-xs"></div>
         </div>
 
-        <div class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-4">
-          <!-- Quiz Progress & Current Target -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3">
-            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
-              <span>Predicting Iteration: <strong id="quiz-iter-target" class="text-white">1</strong></span>
-              <span>Prior CS: <strong id="quiz-prev-cs" class="text-amber-400">A</strong></span>
-            </div>
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
-              <div id="quiz-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 10%"></div>
-            </div>
-          </div>
-
-          <!-- Question 1: What is next CS? -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2">
-            <label class="text-xs font-bold text-slate-300 block">
-              1. What will be the new Current State (<code class="text-amber-400 font-mono">CS</code>)?
-            </label>
-            <div id="quiz-cs-options" class="grid grid-cols-4 gap-2 pt-1">
-              <!-- Dynamically populated choices -->
-            </div>
-          </div>
-
-          <!-- Question 2: Predict SL -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2">
-            <label class="text-xs font-bold text-slate-300 block">
-              2. What will be in the State List (<code class="text-emerald-400 font-mono">SL</code>)?
-              <span class="text-[10px] text-slate-400 font-normal block">Format as items separated by space or brackets, e.g. <span class="font-mono text-emerald-300">[B A]</span> or <span class="font-mono text-emerald-300">B A</span></span>
-            </label>
-            <input type="text" id="quiz-input-sl" placeholder="e.g. B A" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono text-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-          </div>
-
-          <!-- Question 3: Predict DE additions -->
-          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2">
-            <label class="text-xs font-bold text-slate-300 block">
-              3. What nodes are in Dead Ends (<code class="text-rose-400 font-mono">DE</code>)?
-              <span class="text-[10px] text-slate-400 font-normal block">Leave blank or <span class="font-mono">[]</span> if empty; or list nodes e.g. <span class="font-mono text-rose-300">H</span> or <span class="font-mono text-rose-300">E I H</span></span>
-            </label>
-            <input type="text" id="quiz-input-de" placeholder="e.g. H (or empty)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm font-mono text-rose-300 focus:outline-none focus:ring-1 focus:ring-rose-500">
-          </div>
-
-          <!-- Feedback Alert -->
-          <div id="quiz-feedback-box" class="hidden p-3 rounded-lg text-xs leading-relaxed">
-          </div>
-
-          <!-- Submit / Action Buttons -->
-          <div class="flex items-center gap-2 pt-1">
-            <button id="btn-quiz-check" onclick="evaluateQuizStep()" class="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition shadow-md flex items-center justify-center gap-1.5">
-              <i class="ph ph-check-circle text-base"></i> Submit Answer
-            </button>
-            <button id="btn-quiz-reveal" onclick="revealAndNextQuizStep()" class="px-3.5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 flex items-center gap-1">
-              Reveal / Next <i class="ph ph-arrow-right"></i>
-            </button>
-          </div>
+        <div class="mt-auto bg-slate-950/60 p-3 rounded-lg border border-slate-800 text-[11px] text-slate-400 space-y-1">
+          <div class="font-semibold text-slate-300">Luger Convention Reminder:</div>
+          <div>• List format accepts spaces or commas: <code class="text-indigo-300">[B A]</code> or <code class="text-indigo-300">[B, A]</code>.</div>
+          <div>• Empty list is represented as <code class="text-indigo-300">[]</code> or <code class="text-indigo-300">[ ]</code>.</div>
+          <div>• New children are placed at the <strong>head</strong> of NSL in left-to-right order.</div>
         </div>
       </div>
-
-    </section>
+    </div>
   </main>
 
-  <!-- MODAL: Luger Backtracking Algorithm Reference -->
-  <div id="modal-algorithm" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <i class="ph ph-book-open text-sky-400 text-base"></i> Luger Backtracking Search Formal Algorithm
-        </h3>
-        <button onclick="toggleAlgorithmModal(false)" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800">
-          <i class="ph ph-x text-lg"></i>
-        </button>
-      </div>
-
-      <div class="p-5 overflow-y-auto custom-scrollbar text-xs space-y-4 text-slate-300">
-        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 font-mono text-[11px] leading-relaxed text-slate-200">
-          <strong class="text-emerald-400 font-bold block mb-1.5">// Initialization</strong>
-          SL := [Start]; &nbsp;NSL := [Start]; &nbsp;DE := [ ]; &nbsp;CS := Start;<br><br>
-          <strong class="text-emerald-400 font-bold block mb-1.5">// Main Loop</strong>
-          while NSL is not empty do<br>
-          &nbsp;&nbsp;if CS = Goal then return SL; // Success! Path found<br>
-          &nbsp;&nbsp;if CS has children not in (DE ∪ SL ∪ NSL) then<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;add children to the head of NSL;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;CS := head of NSL;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;add CS to head of SL;<br>
-          &nbsp;&nbsp;else<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;// Dead End encountered! Backtrack<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;remove CS from NSL;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;add CS to DE;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;remove CS from SL;<br>
-          &nbsp;&nbsp;&nbsp;&nbsp;CS := head of SL (or parent on active path);<br>
-          return FAIL;
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 text-xs">
-          <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60">
-            <strong class="text-amber-400 block font-semibold mb-1">State Definitions</strong>
-            <ul class="list-disc list-inside space-y-1 text-slate-300">
-              <li><strong class="text-white">CS:</strong> Current state under evaluation.</li>
-              <li><strong class="text-white">SL:</strong> State list (the sequence from start to CS).</li>
-              <li><strong class="text-white">NSL:</strong> New state list (frontier / candidate stack).</li>
-              <li><strong class="text-white">DE:</strong> Dead ends (pruned subtrees).</li>
-            </ul>
-          </div>
-          <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60">
-            <strong class="text-sky-400 block font-semibold mb-1">Textbook Convention (Figure 3.14)</strong>
-            <p class="text-slate-300 leading-relaxed">
-              In George Luger's canonical trace, when children are generated (e.g. B, C, D for node A), they are placed at the front of NSL in left-to-right order, and the leftmost is immediately selected as next CS and pushed onto SL.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="p-3 border-t border-slate-800 bg-slate-950 text-right">
-        <button onclick="toggleAlgorithmModal(false)" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs">
-          Got it
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: Child Branch Order Editor -->
-  <div id="modal-order" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col">
-      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
-        <h3 class="text-sm font-bold text-white flex items-center gap-2">
-          <i class="ph ph-sort-ascending text-emerald-400"></i> Children Exploration Order
-        </h3>
-        <button onclick="toggleOrderModal(false)" class="text-slate-400 hover:text-white p-1">
-          <i class="ph ph-x text-lg"></i>
-        </button>
-      </div>
-      <div class="p-4 text-xs space-y-3">
-        <p class="text-slate-400">Select a parent node to inspect or reorder which child branch is traversed first (Left-to-Right):</p>
-        <select id="parent-order-select" onchange="populateChildOrderList()" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-medium outline-none">
-        </select>
-        <div id="child-order-container" class="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar p-1">
-          <!-- Dynamically populated draggable/reorderable children -->
-        </div>
-      </div>
-      <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end gap-2">
-        <button onclick="toggleOrderModal(false)" class="px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CORE JAVASCRIPT LOGIC -->
+  <!-- Interactive JavaScript Application Engine -->
   <script>
-    /* =========================================================================
-       1. DATA STRUCTURES & DEFAULT GRAPH (LUGER FIG 3.14)
-       ========================================================================= */
-    const DEFAULT_GRAPH = {
-      nodes: [
-        { id: 'A', x: 260, y: 50 },
-        { id: 'B', x: 150, y: 140 },
-        { id: 'C', x: 270, y: 140 },
-        { id: 'D', x: 390, y: 140 },
-        { id: 'E', x: 80,  y: 240 },
-        { id: 'F', x: 215, y: 240 },
-        { id: 'H', x: 50,  y: 340 },
-        { id: 'I', x: 130, y: 340 },
-        { id: 'J', x: 240, y: 340 },
-        { id: 'G', x: 330, y: 240 }
-      ],
-      // Edges with explicit ordering representing Figure 3.14
-      edges: [
-        { from: 'A', to: 'B' },
-        { from: 'A', to: 'C' },
-        { from: 'A', to: 'D' },
-        { from: 'B', to: 'E' },
-        { from: 'B', to: 'F' },
-        { from: 'E', to: 'H' },
-        { from: 'E', to: 'I' },
-        { from: 'F', to: 'J' },
-        { from: 'C', to: 'F' },
-        { from: 'C', to: 'G' }
-      ],
-      startNode: 'A',
-      goalNode: 'G'
+    // --- Data Model & State ---
+    let graph = {
+      nodes: {}, // id: { id, label, x, y }
+      edges: []  // { from, to }
     };
 
-    // Active working graph copy
-    let graph = JSON.parse(JSON.stringify(DEFAULT_GRAPH));
+    let startNodeId = 'A';
+    let goalNodeId = 'G';
 
-    // Simulation state
-    let simulationSteps = [];
-    let currentStepIndex = 0;
+    // Backtracking trace steps
+    // Step schema: { iter, CS, SL: [], NSL: [], DE: [], actionType, description, activeRuleLine, backtrackedEdges: [] }
+    let traceSteps = [];
+    let currentStepIdx = 0;
     let isPlaying = false;
-    let playInterval = null;
-    let playSpeed = 1000;
+    let playTimer = null;
 
-    // Interactive Canvas tools
-    let currentTool = 'select'; // 'select' | 'node' | 'edge' | 'delete'
-    let selectedNodeId = null;
-    let edgeDragSource = null;
-    let isDraggingNode = false;
+    // Canvas Interaction States
+    let currentTool = 'select'; // 'select', 'addNode', 'addEdge', 'delete'
+    let selectedNodeForEdge = null;
+    let draggingNodeId = null;
     let dragOffset = { x: 0, y: 0 };
 
     // Quiz State
-    let quizCurrentStep = 1;
     let quizScore = 0;
     let quizAttempts = 0;
-    let selectedQuizCs = null;
 
-    /* =========================================================================
-       2. LUGER BACKTRACKING ALGORITHM ENGINE
-       Faithfully reproduces the textbook state transitions and variable trace
-       ========================================================================= */
-    function computeBacktrackingTrace(g) {
+    // --- Preset Graphs ---
+    const PRESETS = {
+      figure314: {
+        nodes: {
+          'A': { id: 'A', label: 'A', x: 300, y: 55 },
+          'B': { id: 'B', label: 'B', x: 190, y: 155 },
+          'C': { id: 'C', label: 'C', x: 340, y: 155 },
+          'D': { id: 'D', label: 'D', x: 470, y: 155 },
+          'E': { id: 'E', label: 'E', x: 130, y: 260 },
+          'F': { id: 'F', label: 'F', x: 270, y: 260 },
+          'G': { id: 'G', label: 'G', x: 390, y: 260 },
+          'H': { id: 'H', label: 'H', x: 90,  y: 365 },
+          'I': { id: 'I', label: 'I', x: 180, y: 365 },
+          'J': { id: 'J', label: 'J', x: 270, y: 365 }
+        },
+        edges: [
+          { from: 'A', to: 'B' },
+          { from: 'A', to: 'C' },
+          { from: 'A', to: 'D' },
+          { from: 'B', to: 'E' },
+          { from: 'B', to: 'F' },
+          { from: 'E', to: 'H' },
+          { from: 'E', to: 'I' },
+          { from: 'F', to: 'J' },
+          { from: 'C', to: 'F' },
+          { from: 'C', to: 'G' }
+        ],
+        start: 'A',
+        goal: 'G'
+      },
+      simpleBinary: {
+        nodes: {
+          'A': { id: 'A', label: 'A', x: 300, y: 60 },
+          'B': { id: 'B', label: 'B', x: 180, y: 170 },
+          'C': { id: 'C', label: 'C', x: 420, y: 170 },
+          'D': { id: 'D', label: 'D', x: 120, y: 280 },
+          'E': { id: 'E', label: 'E', x: 240, y: 280 },
+          'F': { id: 'F', label: 'F', x: 360, y: 280 },
+          'G': { id: 'G', label: 'G', x: 480, y: 280 }
+        },
+        edges: [
+          { from: 'A', to: 'B' },
+          { from: 'A', to: 'C' },
+          { from: 'B', to: 'D' },
+          { from: 'B', to: 'E' },
+          { from: 'C', to: 'F' },
+          { from: 'C', to: 'G' }
+        ],
+        start: 'A',
+        goal: 'E'
+      },
+      deadEndMaze: {
+        nodes: {
+          'Start': { id: 'Start', label: 'S', x: 300, y: 50 },
+          'A': { id: 'A', label: 'A', x: 170, y: 150 },
+          'B': { id: 'B', label: 'B', x: 430, y: 150 },
+          'Dead1': { id: 'Dead1', label: 'D1', x: 100, y: 260 },
+          'Dead2': { id: 'Dead2', label: 'D2', x: 230, y: 260 },
+          'Dead3': { id: 'Dead3', label: 'D3', x: 360, y: 260 },
+          'Goal': { id: 'Goal', label: 'G', x: 490, y: 260 }
+        },
+        edges: [
+          { from: 'Start', to: 'A' },
+          { from: 'Start', to: 'B' },
+          { from: 'A', to: 'Dead1' },
+          { from: 'A', to: 'Dead2' },
+          { from: 'B', to: 'Dead3' },
+          { from: 'B', to: 'Goal' }
+        ],
+        start: 'Start',
+        goal: 'Goal'
+      }
+    };
+
+    // --- Luger Backtracking Algorithm Simulator ---
+    // Faithfully implements George Luger's backtracking logic from AI: Structures and Strategies
+    function generateBacktrackingTrace(graphData, startId, goalId) {
       const steps = [];
-      const start = g.startNode;
-      const goal = g.goalNode;
+      if (!graphData.nodes[startId]) return steps;
 
-      if (!g.nodes.find(n => n.id === start) || !g.nodes.find(n => n.id === goal)) {
-        return steps;
+      // Helper to retrieve children sorted by visual X coordinate (left-to-right)
+      function getChildren(nodeId) {
+        return graphData.edges
+          .filter(e => e.from === nodeId)
+          .map(e => graphData.nodes[e.to])
+          .filter(Boolean)
+          .sort((a, b) => a.x - b.x)
+          .map(n => n.id);
       }
 
-      // Helper to query outgoing children in defined order
-      const getChildren = (parentId) => {
-        return g.edges.filter(e => e.from === parentId).map(e => e.to);
-      };
-
-      // State registers
-      let CS = start;
-      let SL = [start];
-      let NSL = [start];
+      // Initial state (Iteration 0)
+      let CS = startId;
+      let SL = [startId];
+      let NSL = [startId];
       let DE = [];
-      let visitCounter = 1;
-      const visitOrders = { [start]: visitCounter };
+      let iter = 0;
 
-      // Iteration 0: Initial state
       steps.push({
-        iteration: 0,
-        CS: CS,
+        iter: 0,
+        CS,
         SL: [...SL],
         NSL: [...NSL],
         DE: [...DE],
-        action: 'initial',
-        explanation: `Initialize: Start at ${start}. Set SL = [${start}], NSL = [${start}], DE = [ ], CS = ${start}.`,
-        visitOrders: { ...visitOrders }
+        actionType: 'init',
+        description: `Initialize search. SL=[${SL.join(' ')}], NSL=[${NSL.join(' ')}], DE=[ ], CS=${CS}`,
+        activeRuleLine: 1,
+        activeNode: CS,
+        backtrackEdge: null
       });
 
-      let reachedGoal = (CS === goal);
-      let iteration = 0;
-      const maxIterations = 200; // Guard against cyclic runaway
+      const maxIter = 100; // safeguard
 
-      while (NSL.length > 0 && !reachedGoal && iteration < maxIterations) {
-        iteration++;
+      while (NSL.length > 0 && iter < maxIter) {
+        // Goal Check
+        if (CS === goalId) {
+          steps[steps.length - 1].description += ` -> GOAL ${goalId} REACHED!`;
+          break;
+        }
 
-        // 1. Get ordered children of CS not already in (DE ∪ SL ∪ NSL)
+        // Generate children of CS not already in SL or DE (cycle prevention)
         const allChildren = getChildren(CS);
-        const unvisitedChildren = allChildren.filter(child => {
-          return !DE.includes(child) && !SL.includes(child) && !NSL.includes(child);
-        });
+        const unvisitedChildren = allChildren.filter(c => !SL.includes(c) && !DE.includes(c));
 
         if (unvisitedChildren.length > 0) {
-          // Children found: Luger adds children to head of NSL in left-to-right order.
-          // In Luger's trace table (Fig 3.14):
-          // From A: children are B, C, D. NSL becomes [B, C, D, A].
-          // CS becomes B (first child).
-          // SL becomes [B, A].
-          const restNSL = NSL.slice();
-          // Insert unvisited children at front of NSL
-          NSL = [...unvisitedChildren, ...restNSL];
-
-          CS = NSL[0]; // Take head of NSL
-          SL = [CS, ...SL]; // Push CS to head of SL
-
-          if (!visitOrders[CS]) {
-            visitCounter++;
-            visitOrders[CS] = visitCounter;
-          }
-
-          steps.push({
-            iteration: iteration,
-            CS: CS,
-            SL: [...SL],
-            NSL: [...NSL],
-            DE: [...DE],
-            action: 'expand',
-            explanation: `Node ${SL[1]} has unvisited children [${unvisitedChildren.join(', ')}]. Add them to head of NSL. CS becomes ${CS}. Push ${CS} to SL.`,
-            visitOrders: { ...visitOrders }
-          });
-
-          if (CS === goal) {
-            reachedGoal = true;
-            break;
-          }
-        } else {
-          // Dead End encountered!
-          // No unvisited children from CS. Backtrack!
-          const deadNode = CS;
-          // Add deadNode to DE
-          if (!DE.includes(deadNode)) {
-            DE = [deadNode, ...DE];
-          }
-
-          // Remove deadNode from NSL
-          NSL = NSL.filter(node => node !== deadNode);
-
-          // Pop deadNode from SL
-          if (SL[0] === deadNode) {
-            SL.shift();
-          }
-
-          if (SL.length === 0) {
-            // Entire search space exhausted with no path
-            steps.push({
-              iteration: iteration,
-              CS: 'FAIL',
-              SL: [],
-              NSL: [...NSL],
-              DE: [...DE],
-              action: 'fail',
-              explanation: `SL is empty after exhausting ${deadNode}. No path exists to goal ${goal}. Search failed.`,
-              visitOrders: { ...visitOrders }
-            });
-            break;
-          }
-
-          // In Luger backtracking:
-          // Backtrack to parent node on SL (the new SL[0]), and continue from next candidate in NSL
-          // Looking at Luger Figure 3.14 step 4:
-          // At H (iteration 3): H has no children. H added to DE. SL pops H, CS becomes I (next child of E in NSL).
-          // At I (iteration 4): I has no children. I and E added to DE. SL pops I and E, CS becomes F.
-          // CS takes the current head of NSL!
+          // Rule 2a: CS has children.
+          // Place children at head of NSL
+          // Luger: NSL becomes children + remainder of NSL (or NSL with children put on head)
+          // In Luger Fig 3.14:
+          // Iter 0: NSL = [A]
+          // Iter 1: B has children [E F]. NSL was [B C D A] -> becomes [E F B C D A]
+          // CS becomes head of NSL, SL has CS added to head.
+          
+          NSL = [...unvisitedChildren, ...NSL];
           CS = NSL[0];
-
-          // Push new CS to head of SL if not already matching parent relationship
-          // To strictly mirror Luger's trace:
-          // Iteration 4: CS = I, SL = [I E B A], NSL = [I E F B C D A], DE = [H]
-          if (CS && !SL.includes(CS)) {
-            SL = [CS, ...SL];
-          }
-
-          if (CS && !visitOrders[CS]) {
-            visitCounter++;
-            visitOrders[CS] = visitCounter;
-          }
+          SL = [CS, ...SL];
+          iter++;
 
           steps.push({
-            iteration: iteration,
-            CS: CS,
+            iter,
+            CS,
             SL: [...SL],
             NSL: [...NSL],
             DE: [...DE],
-            action: 'backtrack',
-            explanation: `Dead End at ${deadNode}! Add ${deadNode} to DE, pop from SL/NSL. Backtrack to candidate ${CS}.`,
-            visitOrders: { ...visitOrders }
+            actionType: 'expand',
+            description: `Generated children [${unvisitedChildren.join(' ')}] for previous node. Visited leftmost child ${CS}.`,
+            activeRuleLine: 5,
+            activeNode: CS,
+            backtrackEdge: null
           });
+        } else {
+          // Rule 2b: CS is a dead-end (no unvisited children)
+          // Backtrack step:
+          // Luger's inner loop: WHILE SL ≠ [ ] and CS = car(SL) DO:
+          //   add CS to DE; remove CS from SL; remove CS from NSL;
+          //   CS = car(NSL); add CS to SL;
+          
+          let backtrackFrom = CS;
+          let newCS = null;
 
-          if (CS === goal) {
-            reachedGoal = true;
-            break;
+          while (SL.length > 0 && CS === SL[0]) {
+            // Add CS to DE (at head or as set)
+            if (!DE.includes(CS)) {
+              DE = [CS, ...DE];
+            }
+            // Remove CS from SL
+            SL = SL.slice(1);
+            // Remove CS from NSL
+            NSL = NSL.filter(node => node !== CS);
+
+            if (NSL.length === 0) break;
+
+            CS = NSL[0];
+            // If the new CS is not already in SL, add it to SL
+            if (SL.length > 0 && SL[0] !== CS) {
+              SL = [CS, ...SL];
+            }
           }
-        }
-      }
 
-      if (reachedGoal) {
-        steps.push({
-          iteration: iteration + 1,
-          CS: goal,
-          SL: [...SL],
-          NSL: [...NSL],
-          DE: [...DE],
-          action: 'success',
-          explanation: `🎯 GOAL FOUND! Target ${goal} has been reached. Final Solution Path: [${SL.slice().reverse().join(' -> ')}].`,
-          visitOrders: { ...visitOrders }
-        });
+          iter++;
+          steps.push({
+            iter,
+            CS,
+            SL: [...SL],
+            NSL: [...NSL],
+            DE: [...DE],
+            actionType: 'backtrack',
+            description: `Dead-end reached at ${backtrackFrom}! Backtracked up tree, added to DE. Current state set to next on NSL: ${CS}.`,
+            activeRuleLine: 8,
+            activeNode: CS,
+            backtrackEdge: { from: backtrackFrom, to: CS }
+          });
+        }
+
+        if (CS === goalId) {
+          steps[steps.length - 1].description += ` -> GOAL ${goalId} REACHED!`;
+          break;
+        }
       }
 
       return steps;
     }
 
-    /* =========================================================================
-       3. SVG RENDERING & INTERACTIVE CANVAS
-       ========================================================================= */
-    const svg = document.getElementById('graph-svg');
-    const nodesLayer = document.getElementById('nodes-layer');
-    const edgesLayer = document.getElementById('edges-layer');
-    const annotationLayer = document.getElementById('annotation-layer');
-    const dragLine = document.getElementById('drag-line');
-    const canvasContainer = document.getElementById('canvas-container');
+    // --- Render Graph SVG ---
+    function renderGraph() {
+      const svg = document.getElementById('graphSvg');
+      const layerEdges = document.getElementById('layerEdges');
+      const layerBacktrack = document.getElementById('layerBacktrackOverlay');
+      const layerNodes = document.getElementById('layerNodes');
 
-    function renderCanvas() {
-      // Clear layers
-      nodesLayer.innerHTML = '';
-      edgesLayer.innerHTML = '';
-      annotationLayer.innerHTML = '';
+      layerEdges.innerHTML = '';
+      layerBacktrack.innerHTML = '';
+      layerNodes.innerHTML = '';
 
-      const currentStep = simulationSteps[currentStepIndex] || null;
-      const cs = currentStep ? currentStep.CS : null;
-      const sl = currentStep ? currentStep.SL : [];
-      const nsl = currentStep ? currentStep.NSL : [];
-      const de = currentStep ? currentStep.DE : [];
-      const visitOrders = currentStep ? currentStep.visitOrders : {};
+      const currentStep = traceSteps[currentStepIdx] || {
+        CS: null, SL: [], NSL: [], DE: []
+      };
 
-      // 1. Draw Edges
-      graph.edges.forEach((edge, idx) => {
-        const fromNode = graph.nodes.find(n => n.id === edge.from);
-        const toNode = graph.nodes.find(n => n.id === edge.to);
-        if (!fromNode || !toNode) return;
+      // 1. Render Directed Edges
+      graph.edges.forEach(edge => {
+        const u = graph.nodes[edge.from];
+        const v = graph.nodes[edge.to];
+        if (!u || !v) return;
 
-        // Determine edge state in SL
-        // An edge is an active SL path edge if both nodes are adjacent in SL
-        let isPathEdge = false;
-        for (let i = 0; i < sl.length - 1; i++) {
-          if (sl[i + 1] === edge.from && sl[i] === edge.to) {
-            isPathEdge = true;
-            break;
+        // Determine if edge is part of the active path (SL)
+        // In SL: consecutive elements represent the path
+        let isInPath = false;
+        if (currentStep.SL && currentStep.SL.length > 1) {
+          for (let i = 0; i < currentStep.SL.length - 1; i++) {
+            // SL is [current, parent, grandparent...]
+            if (currentStep.SL[i] === v.id && currentStep.SL[i+1] === u.id) {
+              isInPath = true;
+              break;
+            }
           }
         }
 
-        const isDeadEdge = de.includes(edge.to) && (de.includes(edge.from) || edge.from === cs);
+        const edgeEl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        edgeEl.setAttribute('x1', u.x);
+        edgeEl.setAttribute('y1', u.y);
+        edgeEl.setAttribute('x2', v.x);
+        edgeEl.setAttribute('y2', v.y);
+        edgeEl.setAttribute('stroke', isInPath ? '#38bdf8' : '#475569');
+        edgeEl.setAttribute('stroke-width', isInPath ? '3' : '2');
+        edgeEl.setAttribute('stroke-dasharray', isInPath ? 'none' : 'none');
+        edgeEl.setAttribute('marker-end', isInPath ? 'url(#arrow-active)' : 'url(#arrow)');
+        edgeEl.classList.add('transition-all', 'duration-300');
 
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', fromNode.x);
-        line.setAttribute('y1', fromNode.y);
-        line.setAttribute('x2', toNode.x);
-        line.setAttribute('y2', toNode.y);
-
-        if (isPathEdge) {
-          line.setAttribute('stroke', '#22c55e');
-          line.setAttribute('stroke-width', '3.5');
-          line.setAttribute('marker-end', 'url(#arrow-active)');
-        } else if (isDeadEdge) {
-          line.setAttribute('stroke', '#475569');
-          line.setAttribute('stroke-width', '1.5');
-          line.setAttribute('stroke-dasharray', '4,4');
-          line.setAttribute('marker-end', 'url(#arrow-default)');
-        } else {
-          line.setAttribute('stroke', '#475569');
-          line.setAttribute('stroke-width', '2');
-          line.setAttribute('marker-end', 'url(#arrow-default)');
-        }
-
-        // Edge click for deletion in delete tool
-        line.classList.add('cursor-pointer', 'transition-all');
-        line.addEventListener('click', (e) => {
+        // Edge click handler for deletion
+        edgeEl.addEventListener('click', (e) => {
           if (currentTool === 'delete') {
             e.stopPropagation();
-            deleteEdge(edge.from, edge.to);
+            graph.edges = graph.edges.filter(ed => !(ed.from === edge.from && ed.to === edge.to));
+            recalculateAndRefresh();
           }
         });
 
-        edgesLayer.appendChild(line);
+        layerEdges.appendChild(edgeEl);
       });
 
-      // 2. Draw Nodes
-      graph.nodes.forEach(node => {
-        const isCS = (node.id === cs);
-        const inSL = sl.includes(node.id);
-        const inDE = de.includes(node.id);
-        const inNSL = nsl.includes(node.id);
-        const isStart = (node.id === graph.startNode);
-        const isGoal = (node.id === graph.goalNode);
-        const visitNumber = visitOrders[node.id];
-
-        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        group.setAttribute('transform', `translate(${node.x}, ${node.y})`);
-        group.setAttribute('data-id', node.id);
-        group.classList.add('cursor-pointer');
-
-        // Selection ring
-        if (selectedNodeId === node.id && currentTool === 'select') {
-          const selectCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          selectCircle.setAttribute('r', '25');
-          selectCircle.setAttribute('fill', 'none');
-          selectCircle.setAttribute('stroke', '#38bdf8');
-          selectCircle.setAttribute('stroke-width', '2');
-          selectCircle.setAttribute('stroke-dasharray', '3,3');
-          group.appendChild(selectCircle);
+      // 2. Render Backtracking Indicator overlay if step is backtrack
+      if (currentStep.actionType === 'backtrack' && currentStep.backtrackEdge) {
+        const fromNode = graph.nodes[currentStep.backtrackEdge.from];
+        const toNode = graph.nodes[currentStep.backtrackEdge.to];
+        if (fromNode && toNode) {
+          const pathArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          // Quadratic bezier curving upward
+          const midX = (fromNode.x + toNode.x) / 2;
+          const midY = Math.min(fromNode.y, toNode.y) - 30;
+          pathArc.setAttribute('d', `M ${fromNode.x} ${fromNode.y} Q ${midX} ${midY} ${toNode.x} ${toNode.y}`);
+          pathArc.setAttribute('fill', 'none');
+          pathArc.setAttribute('stroke', '#f43f5e');
+          pathArc.setAttribute('stroke-width', '2.5');
+          pathArc.setAttribute('stroke-dasharray', '5 4');
+          pathArc.setAttribute('marker-end', 'url(#arrow-backtrack)');
+          layerBacktrack.appendChild(pathArc);
         }
+      }
 
-        // Active CS Glowing aura
+      // 3. Render Nodes
+      Object.values(graph.nodes).forEach(node => {
+        const isCS = currentStep.CS === node.id;
+        const isInSL = currentStep.SL && currentStep.SL.includes(node.id);
+        const isInDE = currentStep.DE && currentStep.DE.includes(node.id);
+        const isInNSL = currentStep.NSL && currentStep.NSL.includes(node.id);
+        const isStart = node.id === startNodeId;
+        const isGoal = node.id === goalNodeId;
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+        g.setAttribute('cursor', currentTool === 'select' ? 'grab' : 'pointer');
+        g.dataset.id = node.id;
+
+        // Animated Pulse ring for CS
         if (isCS) {
-          const aura = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-          aura.setAttribute('r', '27');
-          aura.setAttribute('fill', 'rgba(245, 158, 11, 0.25)');
-          aura.setAttribute('stroke', '#f59e0b');
-          aura.setAttribute('stroke-width', '2');
-          aura.classList.add('pulse-glow');
-          group.appendChild(aura);
+          const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          pulse.setAttribute('r', '24');
+          pulse.setAttribute('fill', 'none');
+          pulse.setAttribute('stroke', '#6366f1');
+          pulse.setAttribute('stroke-width', '3');
+          pulse.classList.add('node-pulse');
+          g.appendChild(pulse);
         }
 
-        // Main node circle
+        // Base Circle
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('r', '18');
+        circle.setAttribute('r', '20');
 
-        // Node Styling based on algorithm state
+        // Color coding
         if (isCS) {
-          circle.setAttribute('fill', '#f59e0b');
-          circle.setAttribute('stroke', '#fef08a');
+          circle.setAttribute('fill', '#4f46e5'); // Indigo-600
+          circle.setAttribute('stroke', '#a5b4fc'); // Indigo-200
           circle.setAttribute('stroke-width', '3');
-        } else if (inSL) {
-          circle.setAttribute('fill', '#15803d');
-          circle.setAttribute('stroke', '#4ade80');
-          circle.setAttribute('stroke-width', '2.5');
-        } else if (inDE) {
-          circle.setAttribute('fill', '#1e293b');
-          circle.setAttribute('stroke', '#ef4444');
+        } else if (isInDE) {
+          circle.setAttribute('fill', '#881337'); // Rose-900
+          circle.setAttribute('stroke', '#f43f5e'); // Rose-500
           circle.setAttribute('stroke-width', '2');
-        } else if (inNSL) {
-          circle.setAttribute('fill', '#0c4a6e');
-          circle.setAttribute('stroke', '#38bdf8');
+        } else if (isInSL) {
+          circle.setAttribute('fill', '#0369a1'); // Sky-700
+          circle.setAttribute('stroke', '#38bdf8'); // Sky-400
+          circle.setAttribute('stroke-width', '2.5');
+        } else if (isInNSL) {
+          circle.setAttribute('fill', '#1e293b');
+          circle.setAttribute('stroke', '#818cf8');
+          circle.setAttribute('stroke-dasharray', '3 2');
           circle.setAttribute('stroke-width', '2');
         } else {
           circle.setAttribute('fill', '#1e293b');
-          circle.setAttribute('stroke', '#64748b');
-          circle.setAttribute('stroke-width', '2');
+          circle.setAttribute('stroke', '#475569');
+          circle.setAttribute('stroke-width', '1.5');
         }
-        group.appendChild(circle);
 
-        // Node Label
+        // Start / Goal badges
+        if (isStart) {
+          circle.setAttribute('stroke', '#10b981'); // Emerald
+          circle.setAttribute('stroke-width', isCS ? '3.5' : '2.5');
+        } else if (isGoal) {
+          circle.setAttribute('stroke', '#f59e0b'); // Amber
+          circle.setAttribute('stroke-width', isCS ? '3.5' : '2.5');
+        }
+
+        // Label
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('dominant-baseline', 'central');
+        text.setAttribute('fill', '#ffffff');
+        text.setAttribute('font-weight', '700');
         text.setAttribute('font-size', '13');
-        text.setAttribute('font-weight', 'bold');
-        text.setAttribute('fill', isCS ? '#1e293b' : '#ffffff');
-        text.textContent = node.id;
-        group.appendChild(text);
+        text.textContent = node.label;
 
-        // Visit sequence badge (Figure 3.14 style: 1, 2, 3...)
-        if (visitNumber !== undefined) {
-          const visitBadge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          visitBadge.setAttribute('x', '-22');
-          visitBadge.setAttribute('y', '-14');
-          visitBadge.setAttribute('font-size', '11');
-          visitBadge.setAttribute('font-weight', 'bold');
-          visitBadge.setAttribute('font-family', 'monospace');
-          visitBadge.setAttribute('fill', '#fbbf24');
-          visitBadge.textContent = visitNumber;
-          group.appendChild(visitBadge);
-        }
-
-        // Start / Goal Indicator tags
+        // Subtext / Indicator if Start or Goal
         if (isStart || isGoal) {
-          const tag = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-          tag.setAttribute('x', '0');
-          tag.setAttribute('y', '28');
-          tag.setAttribute('text-anchor', 'middle');
-          tag.setAttribute('font-size', '10');
-          tag.setAttribute('font-weight', 'bold');
-          tag.setAttribute('fill', isStart ? '#4ade80' : '#f43f5e');
-          tag.textContent = isStart && isGoal ? 'START/GOAL' : isStart ? 'START' : 'GOAL';
-          group.appendChild(tag);
+          const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          badge.setAttribute('y', '-24');
+          badge.setAttribute('text-anchor', 'middle');
+          badge.setAttribute('font-size', '9');
+          badge.setAttribute('font-weight', '600');
+          badge.setAttribute('fill', isStart ? '#34d399' : '#fbbf24');
+          badge.textContent = isStart ? 'START' : 'GOAL';
+          g.appendChild(badge);
         }
 
-        // Mouse Events
-        group.addEventListener('mousedown', (e) => onNodeMouseDown(e, node.id));
-        group.addEventListener('mouseup', (e) => onNodeMouseUp(e, node.id));
+        // Dead end marker 'X' badge
+        if (isInDE && !isCS) {
+          const cross = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          cross.setAttribute('x', '14');
+          cross.setAttribute('y', '-12');
+          cross.setAttribute('font-size', '11');
+          cross.setAttribute('font-weight', '900');
+          cross.setAttribute('fill', '#f43f5e');
+          cross.textContent = '✕';
+          g.appendChild(cross);
+        }
 
-        nodesLayer.appendChild(group);
+        g.appendChild(circle);
+        g.appendChild(text);
+
+        // Interaction Listeners
+        g.addEventListener('mousedown', (e) => onNodeMouseDown(e, node.id));
+        g.addEventListener('click', (e) => onNodeClick(e, node.id));
+
+        layerNodes.appendChild(g);
       });
     }
 
-    /* =========================================================================
-       4. INTERACTION HANDLERS (MOUSE & TOUCH FOR GRAPH CANVAS)
-       ========================================================================= */
-    function getCanvasCoordinates(e) {
-      const rect = svg.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return {
-        x: Math.round(clientX - rect.left),
-        y: Math.round(clientY - rect.top)
-      };
-    }
+    // --- Update Trace Table and Step Visuals ---
+    function updateUI() {
+      if (traceSteps.length === 0) return;
+      const step = traceSteps[currentStepIdx];
 
-    function setCanvasTool(tool) {
-      currentTool = tool;
-      ['select', 'node', 'edge', 'delete'].forEach(t => {
-        const btn = document.getElementById(`tool-${t}`);
-        if (t === tool) {
-          btn.className = 'px-2.5 py-1 rounded text-white bg-slate-700 flex items-center gap-1';
-        } else {
-          btn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-white flex items-center gap-1';
+      // Counter
+      document.getElementById('stepCounter').textContent = `${step.iter} / ${traceSteps[traceSteps.length - 1].iter}`;
+
+      // Cards
+      document.getElementById('cardCS').textContent = step.CS || 'None';
+      document.getElementById('cardSL').textContent = `[${step.SL.join(' ')}]`;
+      document.getElementById('cardNSL').textContent = `[${step.NSL.join(' ')}]`;
+      document.getElementById('cardDE').textContent = step.DE.length ? `[${step.DE.join(' ')}]` : '[ ]';
+
+      // Action banner
+      document.getElementById('actionExplanation').textContent = step.description;
+
+      // Highlight rule line in Pseudocode accordion
+      for (let i = 1; i <= 10; i++) {
+        const el = document.getElementById(`codeLine${i}`);
+        if (el) el.classList.remove('bg-indigo-600/40', 'text-white', 'font-bold');
+      }
+      if (step.activeRuleLine) {
+        const activeEl = document.getElementById(`codeLine${step.activeRuleLine}`);
+        if (activeEl) {
+          activeEl.classList.add('bg-indigo-600/40', 'text-white', 'font-bold');
         }
+      }
+
+      // Highlight row in Trace Table
+      document.querySelectorAll('#traceTableBody tr').forEach(row => {
+        row.classList.remove('bg-indigo-950/70', 'border-l-4', 'border-indigo-500', 'font-bold', 'text-white');
       });
-
-      const helpText = document.getElementById('canvas-help-text');
-      switch (tool) {
-        case 'select':
-          helpText.textContent = 'Drag nodes to reposition them smoothly.';
-          break;
-        case 'node':
-          helpText.textContent = 'Click anywhere on canvas to create a new node.';
-          break;
-        case 'edge':
-          helpText.textContent = 'Click on a parent node and drag onto a child node to create an edge.';
-          break;
-        case 'delete':
-          helpText.textContent = 'Click on any node or edge line to remove it.';
-          break;
-      }
-      renderCanvas();
-    }
-
-    svg.addEventListener('click', (e) => {
-      if (currentTool === 'node') {
-        const pos = getCanvasCoordinates(e);
-        // Find next available letter A-Z
-        const usedIds = new Set(graph.nodes.map(n => n.id));
-        let nextChar = 'A';
-        for (let i = 65; i <= 90; i++) {
-          const char = String.fromCharCode(i);
-          if (!usedIds.has(char)) {
-            nextChar = char;
-            break;
-          }
-        }
-        graph.nodes.push({ id: nextChar, x: pos.x, y: pos.y });
-        updateStartGoalDropdowns();
-        recalculateBacktrack();
-      }
-    });
-
-    function onNodeMouseDown(e, nodeId) {
-      e.stopPropagation();
-
-      if (currentTool === 'delete') {
-        deleteNode(nodeId);
-        return;
+      const activeRow = document.getElementById(`tableRow-${step.iter}`);
+      if (activeRow) {
+        activeRow.classList.add('bg-indigo-950/70', 'border-l-4', 'border-indigo-500', 'font-bold', 'text-white');
+        activeRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      if (currentTool === 'select') {
-        selectedNodeId = nodeId;
-        isDraggingNode = true;
-        const node = graph.nodes.find(n => n.id === nodeId);
-        const pos = getCanvasCoordinates(e);
-        dragOffset.x = pos.x - node.x;
-        dragOffset.y = pos.y - node.y;
-        renderCanvas();
-      } else if (currentTool === 'edge') {
-        edgeDragSource = nodeId;
-        const node = graph.nodes.find(n => n.id === nodeId);
-        dragLine.setAttribute('x1', node.x);
-        dragLine.setAttribute('y1', node.y);
-        dragLine.setAttribute('x2', node.x);
-        dragLine.setAttribute('y2', node.y);
-        dragLine.classList.remove('hidden');
-      }
+      // Update Quiz Current Step
+      document.getElementById('quizCurrentIter').textContent = step.iter;
+
+      renderGraph();
     }
 
-    window.addEventListener('mousemove', (e) => {
-      const pos = getCanvasCoordinates(e);
-      if (isDraggingNode && selectedNodeId) {
-        const node = graph.nodes.find(n => n.id === selectedNodeId);
-        if (node) {
-          node.x = Math.max(25, Math.min(svg.clientWidth - 25, pos.x - dragOffset.x));
-          node.y = Math.max(25, Math.min(svg.clientHeight - 25, pos.y - dragOffset.y));
-          renderCanvas();
-        }
-      } else if (edgeDragSource) {
-        dragLine.setAttribute('x2', pos.x);
-        dragLine.setAttribute('y2', pos.y);
-      }
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (isDraggingNode) {
-        isDraggingNode = false;
-      }
-      if (edgeDragSource) {
-        edgeDragSource = null;
-        dragLine.classList.add('hidden');
-      }
-    });
-
-    function onNodeMouseUp(e, targetNodeId) {
-      if (currentTool === 'edge' && edgeDragSource) {
-        e.stopPropagation();
-        if (edgeDragSource !== targetNodeId) {
-          // Check if edge already exists
-          const exists = graph.edges.some(edge => edge.from === edgeDragSource && edge.to === targetNodeId);
-          if (!exists) {
-            graph.edges.push({ from: edgeDragSource, to: targetNodeId });
-            recalculateBacktrack();
-          }
-        }
-        edgeDragSource = null;
-        dragLine.classList.add('hidden');
-      }
-    }
-
-    function deleteNode(nodeId) {
-      graph.nodes = graph.nodes.filter(n => n.id !== nodeId);
-      graph.edges = graph.edges.filter(e => e.from !== nodeId && e.to !== nodeId);
-
-      if (graph.startNode === nodeId) {
-        graph.startNode = graph.nodes[0] ? graph.nodes[0].id : '';
-      }
-      if (graph.goalNode === nodeId) {
-        graph.goalNode = graph.nodes[graph.nodes.length - 1] ? graph.nodes[graph.nodes.length - 1].id : '';
-      }
-
-      updateStartGoalDropdowns();
-      recalculateBacktrack();
-    }
-
-    function deleteEdge(from, to) {
-      graph.edges = graph.edges.filter(e => !(e.from === from && e.to === to));
-      recalculateBacktrack();
-    }
-
-    /* =========================================================================
-       5. DROPDOWNS & GRAPH MANAGEMENT
-       ========================================================================= */
-    function updateStartGoalDropdowns() {
-      const startSelect = document.getElementById('start-node-select');
-      const goalSelect = document.getElementById('goal-node-select');
-      startSelect.innerHTML = '';
-      goalSelect.innerHTML = '';
-
-      graph.nodes.forEach(n => {
-        const optS = document.createElement('option');
-        optS.value = n.id;
-        optS.textContent = n.id;
-        if (n.id === graph.startNode) optS.selected = true;
-        startSelect.appendChild(optS);
-
-        const optG = document.createElement('option');
-        optG.value = n.id;
-        optG.textContent = n.id;
-        if (n.id === graph.goalNode) optG.selected = true;
-        goalSelect.appendChild(optG);
-      });
-    }
-
-    function onStartGoalChanged() {
-      graph.startNode = document.getElementById('start-node-select').value;
-      graph.goalNode = document.getElementById('goal-node-select').value;
-      recalculateBacktrack();
-    }
-
-    function loadFigure314Preset() {
-      graph = JSON.parse(JSON.stringify(DEFAULT_GRAPH));
-      updateStartGoalDropdowns();
-      recalculateBacktrack();
-      stepToStart();
-    }
-
-    function clearCanvasPrompt() {
-      graph = {
-        nodes: [{ id: 'A', x: 260, y: 70 }, { id: 'B', x: 260, y: 220 }],
-        edges: [{ from: 'A', to: 'B' }],
-        startNode: 'A',
-        goalNode: 'B'
-      };
-      updateStartGoalDropdowns();
-      recalculateBacktrack();
-    }
-
-    function exportGraphJson() {
-      const jsonStr = JSON.stringify(graph, null, 2);
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `backtrack-graph-${Date.now()}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importGraphJson(evt) {
-      const file = evt.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          if (parsed.nodes && parsed.edges) {
-            graph = parsed;
-            updateStartGoalDropdowns();
-            recalculateBacktrack();
-          }
-        } catch (err) {
-          console.error("Invalid graph JSON", err);
-        }
-      };
-      reader.readAsText(file);
-      evt.target.value = '';
-    }
-
-    /* =========================================================================
-       6. TRACE TABLE & SIMULATOR UI SYNCHRONIZATION
-       ========================================================================= */
-    function recalculateBacktrack() {
-      simulationSteps = computeBacktrackingTrace(graph);
-      if (currentStepIndex >= simulationSteps.length) {
-        currentStepIndex = Math.max(0, simulationSteps.length - 1);
-      }
-      document.getElementById('total-iters-label').textContent = Math.max(0, simulationSteps.length - 1);
-      renderTraceTable();
-      updateSimulationUI();
-      if (currentAppMode === 'quiz') {
-        setupQuizStep();
-      }
-    }
-
-    function formatList(arr) {
-      if (!arr || arr.length === 0) return '[ ]';
-      return `[${arr.join(' ')}]`;
-    }
-
+    // Populate Trace Table
     function renderTraceTable() {
-      const tbody = document.getElementById('trace-table-body');
+      const tbody = document.getElementById('traceTableBody');
       tbody.innerHTML = '';
 
-      simulationSteps.forEach((step, idx) => {
+      traceSteps.forEach((step, idx) => {
         const tr = document.createElement('tr');
-        tr.id = `trace-row-${idx}`;
-        tr.className = 'cursor-pointer hover:bg-slate-800/80 transition-colors duration-150';
-        tr.onclick = () => jumpToStep(idx);
-
-        const isCurrent = (idx === currentStepIndex);
-        if (isCurrent) {
-          tr.classList.add('bg-emerald-950/40', 'border-l-4', 'border-emerald-500');
-        }
-
+        tr.id = `tableRow-${step.iter}`;
+        tr.className = 'cursor-pointer hover:bg-slate-800/60 transition';
         tr.innerHTML = `
-          <td class="py-2 px-2 text-center text-slate-400 font-bold ${isCurrent ? 'text-emerald-400' : ''}">${step.iteration}</td>
-          <td class="py-2 px-2 text-center font-bold ${isCurrent ? 'text-amber-400 bg-amber-500/10 rounded' : 'text-slate-300'}">${step.CS}</td>
-          <td class="py-2 px-2 text-emerald-400/90 whitespace-nowrap">${formatList(step.SL)}</td>
-          <td class="py-2 px-2 text-sky-400/90 whitespace-nowrap">${formatList(step.NSL)}</td>
-          <td class="py-2 px-2 text-rose-400/90 whitespace-nowrap">${formatList(step.DE)}</td>
+          <td class="py-2 px-2.5 text-center text-slate-400">${step.iter}</td>
+          <td class="py-2 px-2.5 text-center text-indigo-400 font-bold">${step.CS}</td>
+          <td class="py-2 px-3 text-sky-300">[${step.SL.join(' ')}]</td>
+          <td class="py-2 px-3 text-violet-300">[${step.NSL.join(' ')}]</td>
+          <td class="py-2 px-3 text-rose-300">${step.DE.length ? `[${step.DE.join(' ')}]` : '[ ]'}</td>
         `;
+        tr.addEventListener('click', () => {
+          pauseAutoPlay();
+          currentStepIdx = idx;
+          updateUI();
+        });
         tbody.appendChild(tr);
       });
     }
 
-    function updateSimulationUI() {
-      const step = simulationSteps[currentStepIndex];
-      if (!step) return;
+    // Refresh Selectors for Start and Goal nodes
+    function updateNodeSelectors() {
+      const startSelect = document.getElementById('selectStartNode');
+      const goalSelect = document.getElementById('selectGoalNode');
+      startSelect.innerHTML = '';
+      goalSelect.innerHTML = '';
 
-      document.getElementById('current-iter-label').textContent = step.iteration;
-      document.getElementById('badge-cs').textContent = step.CS;
-      document.getElementById('badge-sl').textContent = formatList(step.SL);
-      document.getElementById('badge-nsl').textContent = formatList(step.NSL);
-      document.getElementById('badge-de').textContent = formatList(step.DE);
-      document.getElementById('step-explanation').textContent = step.explanation;
+      const nodeKeys = Object.keys(graph.nodes).sort();
+      nodeKeys.forEach(id => {
+        const opt1 = document.createElement('option');
+        opt1.value = id;
+        opt1.textContent = id;
+        if (id === startNodeId) opt1.selected = true;
+        startSelect.appendChild(opt1);
 
-      // Status indicator
-      const badge = document.getElementById('status-badge');
-      if (step.action === 'success') {
-        badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-        badge.textContent = 'Goal Reached!';
-      } else if (step.action === 'backtrack') {
-        badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30';
-        badge.textContent = 'Backtracking';
-      } else if (step.action === 'expand') {
-        badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30';
-        badge.textContent = 'Expanding Branch';
-      } else {
-        badge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700';
-        badge.textContent = 'In Progress';
-      }
-
-      // Highlight active table row and scroll it into view
-      document.querySelectorAll('#trace-table-body tr').forEach(row => {
-        row.classList.remove('bg-emerald-950/40', 'border-l-4', 'border-emerald-500');
+        const opt2 = document.createElement('option');
+        opt2.value = id;
+        opt2.textContent = id;
+        if (id === goalNodeId) opt2.selected = true;
+        goalSelect.appendChild(opt2);
       });
-      const activeRow = document.getElementById(`trace-row-${currentStepIndex}`);
-      if (activeRow) {
-        activeRow.classList.add('bg-emerald-950/40', 'border-l-4', 'border-emerald-500');
-        activeRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      }
-
-      renderCanvas();
     }
 
-    /* =========================================================================
-       7. STEPPER / AUTO-PLAY CONTROLLER
-       ========================================================================= */
-    function stepForward() {
-      if (currentStepIndex < simulationSteps.length - 1) {
-        currentStepIndex++;
-        updateSimulationUI();
-      } else {
-        pausePlayback();
-      }
+    // Recalculate algorithm and refresh canvas & table
+    function recalculateAndRefresh() {
+      traceSteps = generateBacktrackingTrace(graph, startNodeId, goalNodeId);
+      currentStepIdx = 0;
+      updateNodeSelectors();
+      renderTraceTable();
+      updateUI();
     }
 
-    function stepBackward() {
-      if (currentStepIndex > 0) {
-        currentStepIndex--;
-        updateSimulationUI();
-      }
+    // --- Graph Canvas Interaction Handlers ---
+    const svg = document.getElementById('graphSvg');
+    const container = document.getElementById('canvasContainer');
+
+    function getSvgCoordinates(e) {
+      const rect = svg.getBoundingClientRect();
+      return {
+        x: Math.round(e.clientX - rect.left),
+        y: Math.round(e.clientY - rect.top)
+      };
     }
 
-    function stepToStart() {
-      pausePlayback();
-      currentStepIndex = 0;
-      updateSimulationUI();
+    function onNodeMouseDown(e, nodeId) {
+      if (currentTool !== 'select') return;
+      e.stopPropagation();
+      draggingNodeId = nodeId;
+      const node = graph.nodes[nodeId];
+      const coords = getSvgCoordinates(e);
+      dragOffset.x = coords.x - node.x;
+      dragOffset.y = coords.y - node.y;
     }
 
-    function stepToEnd() {
-      pausePlayback();
-      currentStepIndex = simulationSteps.length - 1;
-      updateSimulationUI();
-    }
-
-    function jumpToStep(idx) {
-      pausePlayback();
-      currentStepIndex = idx;
-      updateSimulationUI();
-    }
-
-    function togglePlayPause() {
-      if (isPlaying) {
-        pausePlayback();
-      } else {
-        startPlayback();
-      }
-    }
-
-    function startPlayback() {
-      if (currentStepIndex >= simulationSteps.length - 1) {
-        currentStepIndex = 0;
-      }
-      isPlaying = true;
-      document.getElementById('play-icon').className = 'ph ph-pause-fill text-sm';
-      document.getElementById('play-text').textContent = 'Pause';
-      document.getElementById('btn-play-pause').classList.replace('bg-emerald-600', 'bg-amber-600');
-      document.getElementById('btn-play-pause').classList.replace('hover:bg-emerald-500', 'hover:bg-amber-500');
-
-      playInterval = setInterval(() => {
-        if (currentStepIndex < simulationSteps.length - 1) {
-          stepForward();
-        } else {
-          pausePlayback();
-        }
-      }, playSpeed);
-    }
-
-    function pausePlayback() {
-      isPlaying = false;
-      clearInterval(playInterval);
-      document.getElementById('play-icon').className = 'ph ph-play-fill text-sm';
-      document.getElementById('play-text').textContent = 'Play';
-      document.getElementById('btn-play-pause').classList.replace('bg-amber-600', 'bg-emerald-600');
-      document.getElementById('btn-play-pause').classList.replace('hover:bg-amber-500', 'hover:bg-emerald-500');
-    }
-
-    // Speed Slider Handler
-    const speedSlider = document.getElementById('speed-slider');
-    const speedVal = document.getElementById('speed-val');
-    speedSlider.addEventListener('input', (e) => {
-      // Invert so right = faster
-      const max = 2200;
-      const min = 300;
-      playSpeed = max - parseInt(e.target.value) + min;
-      speedVal.textContent = (playSpeed / 1000).toFixed(1) + 's';
-      if (isPlaying) {
-        pausePlayback();
-        startPlayback();
+    window.addEventListener('mousemove', (e) => {
+      if (!draggingNodeId || currentTool !== 'select') return;
+      const coords = getSvgCoordinates(e);
+      const node = graph.nodes[draggingNodeId];
+      if (node) {
+        node.x = Math.max(30, Math.min(svg.clientWidth - 30, coords.x - dragOffset.x));
+        node.y = Math.max(30, Math.min(svg.clientHeight - 30, coords.y - dragOffset.y));
+        renderGraph();
       }
     });
 
-    /* =========================================================================
-       8. INTERACTIVE QUIZ & PRACTICE MODE
-       ========================================================================= */
-    let currentAppMode = 'explore';
+    window.addEventListener('mouseup', () => {
+      if (draggingNodeId) {
+        draggingNodeId = null;
+        // Recompute if positions changed, because children order depends on X coordinates
+        recalculateAndRefresh();
+      }
+    });
 
-    function setAppMode(mode) {
-      currentAppMode = mode;
-      pausePlayback();
+    function onNodeClick(e, nodeId) {
+      e.stopPropagation();
 
-      const exploreBtn = document.getElementById('mode-explore-btn');
-      const quizBtn = document.getElementById('mode-quiz-btn');
-      const exploreView = document.getElementById('view-explore');
-      const quizView = document.getElementById('view-quiz');
+      if (currentTool === 'delete') {
+        // Delete Node and attached edges
+        delete graph.nodes[nodeId];
+        graph.edges = graph.edges.filter(ed => ed.from !== nodeId && ed.to !== nodeId);
+        if (startNodeId === nodeId) startNodeId = Object.keys(graph.nodes)[0] || '';
+        if (goalNodeId === nodeId) goalNodeId = Object.keys(graph.nodes)[1] || Object.keys(graph.nodes)[0] || '';
+        recalculateAndRefresh();
+        return;
+      }
 
-      if (mode === 'explore') {
-        exploreBtn.className = 'px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm';
-        quizBtn.className = 'px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-300 hover:text-white';
-        exploreView.classList.remove('hidden');
-        quizView.classList.add('hidden');
-      } else {
-        quizBtn.className = 'px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 bg-emerald-600 text-white shadow-sm';
-        exploreBtn.className = 'px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 text-slate-300 hover:text-white';
-        exploreView.classList.add('hidden');
-        quizView.classList.remove('hidden');
-        setupQuizStep();
+      if (currentTool === 'addEdge') {
+        if (!selectedNodeForEdge) {
+          selectedNodeForEdge = nodeId;
+          document.getElementById('canvasStatusTip').textContent = `Edge source selected: ${nodeId}. Now click target child node.`;
+        } else {
+          if (selectedNodeForEdge !== nodeId) {
+            // Check if edge already exists
+            const exists = graph.edges.some(ed => ed.from === selectedNodeForEdge && ed.to === nodeId);
+            if (!exists) {
+              graph.edges.push({ from: selectedNodeForEdge, to: nodeId });
+              document.getElementById('canvasStatusTip').textContent = `Edge added: ${selectedNodeForEdge} -> ${nodeId}`;
+              recalculateAndRefresh();
+            }
+          }
+          selectedNodeForEdge = null;
+        }
       }
     }
 
-    function setupQuizStep() {
-      if (simulationSteps.length <= 1) return;
-
-      if (quizCurrentStep >= simulationSteps.length) {
-        quizCurrentStep = 1;
-      }
-
-      currentStepIndex = quizCurrentStep - 1; // Prior step shown on canvas
-      updateSimulationUI();
-
-      const priorStep = simulationSteps[quizCurrentStep - 1];
-      const targetStep = simulationSteps[quizCurrentStep];
-
-      document.getElementById('quiz-iter-target').textContent = targetStep.iteration;
-      document.getElementById('quiz-prev-cs').textContent = priorStep.CS;
-
-      // Progress bar
-      const pct = Math.round((quizCurrentStep / (simulationSteps.length - 1)) * 100);
-      document.getElementById('quiz-progress-bar').style.width = `${pct}%`;
-
-      // Build CS Options
-      const csContainer = document.getElementById('quiz-cs-options');
-      csContainer.innerHTML = '';
-      selectedQuizCs = null;
-
-      // Candidate CS choices: all graph nodes
-      graph.nodes.forEach(n => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.textContent = n.id;
-        btn.className = 'py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-bold text-slate-200 border border-slate-700 transition';
-        btn.onclick = () => {
-          selectedQuizCs = n.id;
-          Array.from(csContainer.children).forEach(c => {
-            c.className = 'py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-bold text-slate-200 border border-slate-700 transition';
-          });
-          btn.className = 'py-2 rounded-lg bg-amber-500 text-slate-950 font-black border border-amber-300 shadow-md';
+    svg.addEventListener('click', (e) => {
+      if (currentTool === 'addNode') {
+        const coords = getSvgCoordinates(e);
+        // Next available alphabetical label
+        const existingLabels = Object.values(graph.nodes).map(n => n.label);
+        let nextChar = 'A';
+        for (let i = 65; i <= 90; i++) {
+          const char = String.fromCharCode(i);
+          if (!existingLabels.includes(char)) {
+            nextChar = char;
+            break;
+          }
+        }
+        graph.nodes[nextChar] = {
+          id: nextChar,
+          label: nextChar,
+          x: coords.x,
+          y: coords.y
         };
-        csContainer.appendChild(btn);
+        recalculateAndRefresh();
+      } else if (currentTool === 'addEdge') {
+        selectedNodeForEdge = null;
+        document.getElementById('canvasStatusTip').textContent = 'Edge creation canceled. Click a parent node to begin.';
+      }
+    });
+
+    // --- Playback Controls ---
+    function pauseAutoPlay() {
+      isPlaying = false;
+      if (playTimer) clearInterval(playTimer);
+      playTimer = null;
+      document.getElementById('playText').textContent = 'Play';
+      document.getElementById('playIcon').setAttribute('data-lucide', 'play');
+      lucide.createIcons();
+    }
+
+    function toggleAutoPlay() {
+      if (isPlaying) {
+        pauseAutoPlay();
+      } else {
+        if (currentStepIdx >= traceSteps.length - 1) {
+          currentStepIdx = 0;
+        }
+        isPlaying = true;
+        document.getElementById('playText').textContent = 'Pause';
+        document.getElementById('playIcon').setAttribute('data-lucide', 'pause');
+        lucide.createIcons();
+
+        const speed = parseInt(document.getElementById('sliderSpeed').value);
+        playTimer = setInterval(() => {
+          if (currentStepIdx < traceSteps.length - 1) {
+            currentStepIdx++;
+            updateUI();
+          } else {
+            pauseAutoPlay();
+          }
+        }, speed);
+      }
+    }
+
+    document.getElementById('btnPlay').addEventListener('click', toggleAutoPlay);
+    document.getElementById('btnNext').addEventListener('click', () => {
+      pauseAutoPlay();
+      if (currentStepIdx < traceSteps.length - 1) {
+        currentStepIdx++;
+        updateUI();
+      }
+    });
+    document.getElementById('btnPrev').addEventListener('click', () => {
+      pauseAutoPlay();
+      if (currentStepIdx > 0) {
+        currentStepIdx--;
+        updateUI();
+      }
+    });
+    document.getElementById('btnFirst').addEventListener('click', () => {
+      pauseAutoPlay();
+      currentStepIdx = 0;
+      updateUI();
+    });
+    document.getElementById('btnLast').addEventListener('click', () => {
+      pauseAutoPlay();
+      currentStepIdx = traceSteps.length - 1;
+      updateUI();
+    });
+    document.getElementById('btnReset').addEventListener('click', () => {
+      pauseAutoPlay();
+      currentStepIdx = 0;
+      updateUI();
+    });
+
+    document.getElementById('sliderSpeed').addEventListener('input', () => {
+      if (isPlaying) {
+        pauseAutoPlay();
+        toggleAutoPlay();
+      }
+    });
+
+    // --- Toolbar Button States ---
+    const toolButtons = {
+      select: document.getElementById('toolSelect'),
+      addNode: document.getElementById('toolAddNode'),
+      addEdge: document.getElementById('toolAddEdge'),
+      delete: document.getElementById('toolDelete')
+    };
+
+    function setActiveTool(tool) {
+      currentTool = tool;
+      selectedNodeForEdge = null;
+      Object.keys(toolButtons).forEach(t => {
+        if (t === tool) {
+          toolButtons[t].className = 'px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-indigo-600 text-white border border-indigo-500/50 shadow-sm';
+        } else {
+          toolButtons[t].className = 'px-2.5 py-1.5 rounded flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:text-white hover:bg-slate-700';
+        }
       });
 
-      // Clear text inputs & feedback
-      document.getElementById('quiz-input-sl').value = '';
-      document.getElementById('quiz-input-de').value = '';
-      const feedback = document.getElementById('quiz-feedback-box');
-      feedback.className = 'hidden';
-      feedback.innerHTML = '';
+      const tipMap = {
+        select: 'Drag nodes to reposition. Note: left-to-right order dictates child expansion order.',
+        addNode: 'Click anywhere on canvas to drop a new node.',
+        addEdge: 'Click the source parent node, then click the target child node.',
+        delete: 'Click any node or edge to remove it.'
+      };
+      document.getElementById('canvasStatusTip').textContent = tipMap[tool];
     }
 
+    toolButtons.select.addEventListener('click', () => setActiveTool('select'));
+    toolButtons.addNode.addEventListener('click', () => setActiveTool('addNode'));
+    toolButtons.addEdge.addEventListener('click', () => setActiveTool('addEdge'));
+    toolButtons.delete.addEventListener('click', () => setActiveTool('delete'));
+
+    document.getElementById('btnClearGraph').addEventListener('click', () => {
+      pauseAutoPlay();
+      graph = { nodes: {}, edges: [] };
+      startNodeId = '';
+      goalNodeId = '';
+      recalculateAndRefresh();
+    });
+
+    // Preset Loaders
+    function loadPreset(presetKey) {
+      pauseAutoPlay();
+      const p = PRESETS[presetKey];
+      // Deep clone
+      graph = {
+        nodes: JSON.parse(JSON.stringify(p.nodes)),
+        edges: JSON.parse(JSON.stringify(p.edges))
+      };
+      startNodeId = p.start;
+      goalNodeId = p.goal;
+      recalculateAndRefresh();
+    }
+
+    document.getElementById('btnPresetFig314').addEventListener('click', () => loadPreset('figure314'));
+    document.getElementById('btnPresetSimple').addEventListener('click', () => loadPreset('simpleBinary'));
+    document.getElementById('btnPresetDeadEnd').addEventListener('click', () => loadPreset('deadEndMaze'));
+
+    // Start / Goal Select changes
+    document.getElementById('selectStartNode').addEventListener('change', (e) => {
+      startNodeId = e.target.value;
+      recalculateAndRefresh();
+    });
+    document.getElementById('selectGoalNode').addEventListener('change', (e) => {
+      goalNodeId = e.target.value;
+      recalculateAndRefresh();
+    });
+    document.getElementById('btnRecompute').addEventListener('click', recalculateAndRefresh);
+
+    // Pseudocode Accordion Toggle
+    let algoOpen = true;
+    document.getElementById('toggleAlgo').addEventListener('click', () => {
+      algoOpen = !algoOpen;
+      const content = document.getElementById('algoContent');
+      const chevron = document.getElementById('algoChevron');
+      if (algoOpen) {
+        content.classList.remove('hidden');
+        chevron.style.transform = 'rotate(0deg)';
+      } else {
+        content.classList.add('hidden');
+        chevron.style.transform = 'rotate(-90deg)';
+      }
+    });
+
+    // Tab Switcher (Visualizer vs Practice Quiz)
+    const tabExplore = document.getElementById('tabExplore');
+    const tabPractice = document.getElementById('tabPractice');
+    const viewExplore = document.getElementById('viewExplore');
+    const viewPractice = document.getElementById('viewPractice');
+
+    tabExplore.addEventListener('click', () => {
+      tabExplore.className = 'px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition';
+      tabPractice.className = 'px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
+      viewExplore.classList.remove('hidden');
+      viewPractice.classList.add('hidden');
+    });
+
+    tabPractice.addEventListener('click', () => {
+      tabPractice.className = 'px-3 py-1 rounded font-medium bg-slate-700 text-white shadow-sm flex items-center gap-1.5 transition';
+      tabExplore.className = 'px-3 py-1 rounded font-medium text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition';
+      viewPractice.classList.remove('hidden');
+      viewExplore.classList.add('hidden');
+      resetQuizForm();
+    });
+
+    // --- Quiz Mode Logic ---
     function normalizeListInput(str) {
       if (!str) return [];
       return str.replace(/[\[\],]/g, ' ')
-                .trim()
-                .split(/\s+/)
-                .filter(x => x.length > 0)
-                .map(x => x.toUpperCase());
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map(s => s.toUpperCase());
     }
 
-    function evaluateQuizStep() {
-      const targetStep = simulationSteps[quizCurrentStep];
-      if (!targetStep) return;
+    function resetQuizForm() {
+      document.getElementById('inputCS').value = '';
+      document.getElementById('inputSL').value = '';
+      document.getElementById('inputNSL').value = '';
+      document.getElementById('inputDE').value = '';
+      const feedback = document.getElementById('quizFeedback');
+      feedback.classList.add('hidden');
+      feedback.innerHTML = '';
+    }
+
+    document.getElementById('quizForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (currentStepIdx >= traceSteps.length - 1) {
+        const feedback = document.getElementById('quizFeedback');
+        feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-amber-950/60 border border-amber-600/50 text-amber-200';
+        feedback.textContent = 'You are already at the final step! Reset or load a new preset to practice again.';
+        feedback.classList.remove('hidden');
+        return;
+      }
+
+      const nextTargetStep = traceSteps[currentStepIdx + 1];
+
+      const userCS = document.getElementById('inputCS').value.trim().toUpperCase();
+      const userSL = normalizeListInput(document.getElementById('inputSL').value);
+      const userNSL = normalizeListInput(document.getElementById('inputNSL').value);
+      const userDE = normalizeListInput(document.getElementById('inputDE').value);
+
+      const targetCS = nextTargetStep.CS.toUpperCase();
+      const targetSL = nextTargetStep.SL.map(s => s.toUpperCase());
+      const targetNSL = nextTargetStep.NSL.map(s => s.toUpperCase());
+      const targetDE = nextTargetStep.DE.map(s => s.toUpperCase());
+
+      // Helper for array equality
+      const isArrEqual = (a, b) => a.length === b.length && a.every((val, index) => val === b[index]);
+
+      const csCorrect = userCS === targetCS;
+      const slCorrect = isArrEqual(userSL, targetSL);
+      const nslCorrect = isArrEqual(userNSL, targetNSL);
+      const deCorrect = isArrEqual(userDE, targetDE);
 
       quizAttempts++;
-      const userCS = selectedQuizCs;
-      const userSL = normalizeListInput(document.getElementById('quiz-input-sl').value);
-      const userDE = normalizeListInput(document.getElementById('quiz-input-de').value);
+      const allCorrect = csCorrect && slCorrect && nslCorrect && deCorrect;
+      if (allCorrect) quizScore++;
 
-      const expectedCS = targetStep.CS;
-      const expectedSL = targetStep.SL;
-      const expectedDE = targetStep.DE;
+      document.getElementById('quizScore').textContent = quizScore;
+      document.getElementById('quizTotal').textContent = quizAttempts;
 
-      // Compare CS
-      const csCorrect = (userCS === expectedCS);
-
-      // Compare SL (exact ordered sequence)
-      const slCorrect = (userSL.length === expectedSL.length && userSL.every((val, i) => val === expectedSL[i]));
-
-      // Compare DE (set comparison is forgiving, but ordered also nice)
-      const deCorrect = (userDE.length === expectedDE.length && userDE.every(val => expectedDE.includes(val)));
-
-      const feedback = document.getElementById('quiz-feedback-box');
+      const feedback = document.getElementById('quizFeedback');
       feedback.classList.remove('hidden');
 
-      if (csCorrect && slCorrect && deCorrect) {
-        quizScore++;
-        feedback.className = 'p-3 rounded-lg text-xs leading-relaxed bg-emerald-500/10 border border-emerald-500/40 text-emerald-300';
+      if (allCorrect) {
+        feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-emerald-950/70 border border-emerald-500/50 text-emerald-200 space-y-1';
         feedback.innerHTML = `
-          <strong>🎉 Excellent prediction! Perfectly matches Figure 3.14:</strong><br>
-          CS = <span class="font-bold text-white">${expectedCS}</span>, 
-          SL = <span class="font-bold text-white">[${expectedSL.join(' ')}]</span>, 
-          DE = <span class="font-bold text-white">[${expectedDE.join(' ')}]</span>.<br>
-          <span class="text-[11px] text-emerald-400/80 mt-1 block">${targetStep.explanation}</span>
+          <div class="font-bold flex items-center gap-1.5"><i data-lucide="check" class="w-4 h-4"></i> Perfect! You predicted all structures correctly!</div>
+          <div>${nextTargetStep.description}</div>
         `;
-        // Advance to current step in canvas to show result
-        currentStepIndex = quizCurrentStep;
-        updateSimulationUI();
+        // Advance step
+        currentStepIdx++;
+        updateUI();
+        resetQuizForm();
       } else {
-        feedback.className = 'p-3 rounded-lg text-xs leading-relaxed bg-rose-500/10 border border-rose-500/40 text-rose-300';
-        let errs = [];
-        if (!csCorrect) errs.push(`CS should be <strong>${expectedCS}</strong> (you picked ${userCS || 'none'})`);
-        if (!slCorrect) errs.push(`SL should be <strong>[${expectedSL.join(' ')}]</strong> (you entered [${userSL.join(' ')}])`);
-        if (!deCorrect) errs.push(`DE should be <strong>[${expectedDE.join(' ')}]</strong> (you entered [${userDE.join(' ')}])`);
-
-        feedback.innerHTML = `
-          <strong>Incorrect:</strong><br>
-          ${errs.join('<br>')}<br>
-          <span class="text-[11px] text-rose-300/80 mt-1 block">Rule: ${targetStep.explanation}</span>
-        `;
+        feedback.className = 'mt-3 p-3 rounded-lg text-xs bg-rose-950/70 border border-rose-500/50 text-rose-200 space-y-1.5';
+        let detailHtml = '<div class="font-bold">Some predictions were incorrect:</div><ul class="list-disc pl-4 space-y-0.5">';
+        if (!csCorrect) detailHtml += `<li><strong>CS:</strong> You answered <code>${userCS || 'none'}</code> (Expected: <code>${targetCS}</code>)</li>`;
+        if (!slCorrect) detailHtml += `<li><strong>SL:</strong> You answered <code>[${userSL.join(' ')}]</code> (Expected: <code>[${targetSL.join(' ')}]</code>)</li>`;
+        if (!nslCorrect) detailHtml += `<li><strong>NSL:</strong> You answered <code>[${userNSL.join(' ')}]</code> (Expected: <code>[${targetNSL.join(' ')}]</code>)</li>`;
+        if (!deCorrect) detailHtml += `<li><strong>DE:</strong> You answered <code>[${userDE.join(' ')}]</code> (Expected: <code>[${targetDE.join(' ')}]</code>)</li>`;
+        detailHtml += '</ul><div class="pt-1 text-[11px] text-rose-300">Tip: Check if the node is a dead end or has unvisited children to push onto NSL.</div>';
+        feedback.innerHTML = detailHtml;
       }
+      lucide.createIcons();
+    });
 
-      document.getElementById('quiz-score-badge').textContent = `Score: ${quizScore} / ${quizAttempts}`;
-    }
-
-    function revealAndNextQuizStep() {
-      // Show actual step
-      currentStepIndex = quizCurrentStep;
-      updateSimulationUI();
-
-      if (quizCurrentStep < simulationSteps.length - 1) {
-        quizCurrentStep++;
-        setupQuizStep();
-      } else {
-        // Quiz completed
-        const feedback = document.getElementById('quiz-feedback-box');
-        feedback.classList.remove('hidden');
-        feedback.className = 'p-3 rounded-lg text-xs leading-relaxed bg-sky-500/10 border border-sky-500/40 text-sky-300';
-        feedback.innerHTML = `🏁 <strong>Practice Run Complete!</strong> Final Score: ${quizScore} / ${quizAttempts}. Click Fig 3.14 preset to restart.`;
+    document.getElementById('btnRevealStep').addEventListener('click', () => {
+      if (currentStepIdx < traceSteps.length - 1) {
+        const nextStep = traceSteps[currentStepIdx + 1];
+        document.getElementById('inputCS').value = nextStep.CS;
+        document.getElementById('inputSL').value = `[${nextStep.SL.join(' ')}]`;
+        document.getElementById('inputNSL').value = `[${nextStep.NSL.join(' ')}]`;
+        document.getElementById('inputDE').value = nextStep.DE.length ? `[${nextStep.DE.join(' ')}]` : '[ ]';
       }
-    }
+    });
 
-    /* =========================================================================
-       9. BRANCH ORDER MODAL
-       Allows reordering children so users can see how deterministic ordering changes the trace
-       ========================================================================= */
-    function toggleOrderModal(open) {
-      const modal = document.getElementById('modal-order');
-      if (open) {
-        populateParentDropdown();
-        populateChildOrderList();
-        modal.classList.remove('hidden');
-      } else {
-        modal.classList.add('hidden');
-      }
-    }
-
-    function reorderChildrenModal() {
-      toggleOrderModal(true);
-    }
-
-    function populateParentDropdown() {
-      const select = document.getElementById('parent-order-select');
-      select.innerHTML = '';
-      graph.nodes.forEach(n => {
-        const hasChildren = graph.edges.some(e => e.from === n.id);
-        if (hasChildren) {
-          const opt = document.createElement('option');
-          opt.value = n.id;
-          opt.textContent = `Node ${n.id}`;
-          select.appendChild(opt);
-        }
-      });
-    }
-
-    function populateChildOrderList() {
-      const parentId = document.getElementById('parent-order-select').value;
-      const container = document.getElementById('child-order-container');
-      container.innerHTML = '';
-
-      if (!parentId) return;
-
-      const outgoing = graph.edges.filter(e => e.from === parentId);
-      outgoing.forEach((edge, idx) => {
-        const item = document.createElement('div');
-        item.className = 'flex items-center justify-between p-2 bg-slate-800 rounded-lg border border-slate-700 text-xs';
-        item.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="w-5 h-5 rounded bg-slate-700 flex items-center justify-center font-bold text-slate-300 text-[11px]">${idx + 1}</span>
-            <span class="font-bold text-white">Child: ${edge.to}</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <button onclick="moveEdgeOrder('${parentId}', ${idx}, -1)" ${idx === 0 ? 'disabled class="text-slate-600 p-1"' : 'class="text-slate-300 hover:text-white p-1"'}>
-              <i class="ph ph-caret-up text-base"></i>
-            </button>
-            <button onclick="moveEdgeOrder('${parentId}', ${idx}, 1)" ${idx === outgoing.length - 1 ? 'disabled class="text-slate-600 p-1"' : 'class="text-slate-300 hover:text-white p-1"'}>
-              <i class="ph ph-caret-down text-base"></i>
-            </button>
-          </div>
-        `;
-        container.appendChild(item);
-      });
-    }
-
-    function moveEdgeOrder(parentId, currentIdx, direction) {
-      const parentEdges = graph.edges.filter(e => e.from === parentId);
-      const targetIdx = currentIdx + direction;
-      if (targetIdx < 0 || targetIdx >= parentEdges.length) return;
-
-      // Swap in graph.edges array
-      const edgeA = parentEdges[currentIdx];
-      const edgeB = parentEdges[targetIdx];
-
-      const indexA = graph.edges.indexOf(edgeA);
-      const indexB = graph.edges.indexOf(edgeB);
-
-      const temp = graph.edges[indexA];
-      graph.edges[indexA] = graph.edges[indexB];
-      graph.edges[indexB] = temp;
-
-      populateChildOrderList();
-      recalculateBacktrack();
-    }
-
-    function toggleAlgorithmModal(show) {
-      const modal = document.getElementById('modal-algorithm');
-      if (show) modal.classList.remove('hidden');
-      else modal.classList.add('hidden');
-    }
-
-    /* =========================================================================
-       10. INITIALIZATION
-       ========================================================================= */
+    // --- Window Load & Initial Setup ---
     window.onload = function() {
-      updateStartGoalDropdowns();
-      recalculateBacktrack();
-      stepToStart();
+      lucide.createIcons();
+      loadPreset('figure314');
     };
   </script>
 </body>
